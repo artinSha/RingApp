@@ -18,7 +18,7 @@ export default function CallScreen() {
 
   const endCall = () => {
     setIsConnected(false);
-    router.push("/results");
+    router.push("/feedback");
   };
 
   return (
