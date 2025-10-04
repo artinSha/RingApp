@@ -1,11 +1,15 @@
 import { View, Text, Button, StyleSheet, ActivityIndicator } from "react-native";
 import { useRouter } from "expo-router";
 import { useState } from "react";
+import { useAudioPlayer } from 'expo-audio';
+import AudioRecorderButton from "@/components/record-button";
 
 export default function CallScreen() {
   const router = useRouter();
   const [isConnected, setIsConnected] = useState(false);
   const [isLoading, setIsLoading] = useState(false);
+  const [transcript, setTranscript] = useState("");
+  const [sound, setSound] = useState<any>(null);
 
   const startCall = async () => {
     setIsLoading(true);
@@ -20,6 +24,28 @@ export default function CallScreen() {
     setIsConnected(false);
     router.push("/feedback");
   };
+
+  const handleRecordingComplete = async (uri: string) {
+    // Upload to backend
+    const formData = new FormData();
+    formData.append('audio', { uri, name: 'recording.m4a', type: 'audio/m4a' } as any);
+
+    const response = await fetch('https://your-backend.com/upload', {
+      method: 'POST',
+      body: formData,
+      headers: { 'Content-Type': 'multipart/form-data' },
+    });
+
+    const data = await response.json();
+    // data.audioUrl -> returned m4a
+    // data.transcript -> text
+
+    setTranscript(data.transcript);
+
+    // Play returned audio
+    const { sound } = await Audio.Sound.createAsync({ uri: data.audioUrl }, { shouldPlay: true });
+    setSound(sound);
+  });
 
   return (
     <View style={styles.container}>
@@ -39,12 +65,14 @@ export default function CallScreen() {
             <View style={styles.circle} />
             <Text style={styles.timer}>00:36</Text>
           </View>
+          <AudioRecorderButton onRecordingComplete={handleRecordingComplete}/>
           <Button title="End Call" onPress={endCall} color="#FF3B30" />
         </>
       )}
     </View>
   );
 }
+
 
 const styles = StyleSheet.create({
   container: {
