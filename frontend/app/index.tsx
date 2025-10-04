@@ -19,7 +19,7 @@ export default function HomeScreen() {
         />
         <Button
           title="View My Feedback"
-          onPress={() => router.push("/results")}
+          onPress={() => router.push("/feedback")}
           color="#34C759"
         />
       </View>
@@ -51,3 +51,55 @@ const styles = StyleSheet.create({
     gap: 16,
   },
 });
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
