@@ -1,0 +1,13 @@
+{
+  "type": "service_account",
+  "project_id": "spring-radar-474120-c4",
+  "private_key_id": "755c238493d89c8a8d477f9df9f57b277d2afbe6",
+  "private_key": "-----BEGIN PRIVATE KEY-----\nMIIEvAIBADANBgkqhkiG9w0BAQEFAASCBKYwggSiAgEAAoIBAQCW8yGTOl9XjBRz\n1SsINorjwB7Pp9kd5QZSAAo163gkcg66pGgvSY9bH8r81nL7EbzHC9RoogRxCXl3\nOvPnQ2xBO/Bakk0mtupg8jYbCvl9ziJaYQX/YWnc7ULei1z0b3czQMaW0MF+WSWa\nzQBsmBlsqqIwAw5qtDFnD9N9ToMLzShUdIZ/sQRF2FhmslOeP8covzHbwH3SMMfo\nNZCN34c1TyvwAL8SNHacO9ixhGBLWLe/2kvRy5FNeejtManBzJA/57T4J7HURqLF\n4Hf3QaGhKl+okOwl1fcJsqC38GVAb6On2n7qZ6QAoz/yozonoCC1tT9Du2Z/ECKA\nay9CKwY1AgMBAAECggEAG3BctQ+STy62dQvVw6tuedHth9/B9s4v5O3+7Sg9cZqO\nFN1X1uivN2hDFMzCn+Lsht4eoVp6JjYLr2G2/l3iKsWDfmNDxPrRBghhT28iRP0Y\nf4dNeMuzW6aBVkTNA93TNCzdLIML+TSpQkdrgVHwpTErRED5+OmCZXKaBhgkeBtu\ndfG+/jkiz+h40iJA0WcEXUrs34r8APcFvyS5ZBXWiqDA3FEUaqwlNEx7NNU6zeNa\nYDZFpEGyOiwYUGeVhUrxlLCowotqgdMgqovetMGv6dmIpNVNVJYSUyYEEQCffyXi\nZoJxz/MGV3YFvZNZDw3dsMNPCLtqL+RdltJp1k8ITQKBgQDGXyp3Na0voQUPaI13\n4EYB7xF3VlO/cxkJv1coIsqophXlALYLSAXMxnNi07lsO2t7s7pctwuWgDxudp2q\nntSs+8A/jezVO6LfIDcFqOWJyjtefDEUSqBrCm1IqfKgV5mRGZer9CZv1qNvjGTp\nJYUmTlRus62zk+W9VwzcX/RXHwKBgQDCzTUm8wYxlVjYjHGC2VW6N1oA3dWIzNZQ\nij9VeA5YPg2OxXmpanUmgWbpEBbnXA8uhMAz/L5sDWDWyo9QSD3x7f/CMPUmXP5l\nFJlIAISFcbBPaEmIsVb24R1DGjQrPuRZ2SHq0/CoAGN0bz7XDHx61LGCv+vw833T\nvZm0n0ccKwKBgDqLr67LKrfZ3/JyOv5cNI0xj4gW9FSWlZco34I68nDfw6p4kUG3\nGe8bysYqEpl81/YET0Y5x7O9WRiI7XODuOTs0ApxyqoMFb+gdFy5QjVueCMkqB+C\n/uFYjHRbo/3qnKoUUY0wW3+6azXqy4V7y1ZI2+ZoJSXQyocc//CyaRylAoGAWVyp\ntWRmwvgv+abzq4LnwLUDpMIe4tKUvf2tcBfS/Mf6kDQmy4D6nN9fxiqLVzbz//MF\n+NNIx2ibs+zYMYvyXrk/SmYLD745NUVty4nxQQYWS1cb5Ij1y+sY8V9j7zK6rjzd\nQkxXabpD5XXi7ePcdrx7ce943N/WKPwhNqqahGECgYBgk/ncPcCJuKlolI8874ur\nJWzPiQgPs3UGv26FLVaT683xz7QCrIx1Io5kOzBPW4crZLBIIm8kDg34mEHzpmjb\naXJKNnb8ZIY/uiue/xCPJWjScYzYzxCVUGkMapjsQTr7hAZWqHgEDzaVtgdkFVuK\nA+lIl7jpQy1FC/VrlDqHUg==\n-----END PRIVATE KEY-----\n",
+  "client_email": "speech-stt-service@spring-radar-474120-c4.iam.gserviceaccount.com",
+  "client_id": "107305302517432692862",
+  "auth_uri": "https://accounts.google.com/o/oauth2/auth",
+  "token_uri": "https://oauth2.googleapis.com/token",
+  "auth_provider_x509_cert_url": "https://www.googleapis.com/oauth2/v1/certs",
+  "client_x509_cert_url": "https://www.googleapis.com/robot/v1/metadata/x509/speech-stt-service%40spring-radar-474120-c4.iam.gserviceaccount.com",
+  "universe_domain": "googleapis.com"
+}
