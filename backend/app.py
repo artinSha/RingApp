@@ -1,4 +1,4 @@
-from flask import Flask, request, jsonify
+from flask import Flask, request, jsonify, send_file
 from pymongo import MongoClient
 from datetime import datetime, timezone
 from dotenv import load_dotenv
@@ -6,6 +6,8 @@ import os
 import openai
 from bson.objectid import ObjectId
 from flask_cors import CORS
+import requests
+import base64
 
 # Load environment variables
 load_dotenv()
@@ -80,7 +82,7 @@ def start_call():
             "turn": 0,
             "user_text": None,
             "ai_text": ai_text,
-            "created_at": datetime.now(timezone.utc)  # Changed here
+            "created_at": datetime.now(timezone.utc)
         }}}
     )
 
@@ -98,15 +100,16 @@ def start_call():
 # -------------------------------
 # Helper: Transcription of user audio using Google Cloud STT
 # -------------------------------
-def transcribe_audio(audio_file):
+def transcribe_audio_stt(audio_file):
     """
     Replace with Gemini/OpenAI transcription later.
     Currently just returns dummy text.
     """
     return "This is a placeholder transcription of user audio."
 
+
 # -------------------------------
-# Helper: placeholder AI response
+# Helper: Generates AI response based on string of conversation history thus far
 # -------------------------------
 def generate_ai_text(conversation_context):
     """
@@ -114,6 +117,104 @@ def generate_ai_text(conversation_context):
     Currently just returns dummy AI text.
     """
     return "Great! You should look for a safe spot immediately."
+
+
+# -------------------------------
+# Helper: ElevenLabs TTS
+# -------------------------------
+def elevenlabs_tts(text):
+    url = f"https://api.elevenlabs.io/v1/text-to-speech/{ELEVEN_VOICE_ID}"
+    headers = {
+        "xi-api-key": ELEVENLABS_API_KEY,
+        "Content-Type": "application/json"
+    }
+    payload = {"text": text}
+    response = requests.post(url, headers=headers, json=payload)
+    if response.status_code != 200:
+        raise RuntimeError(f"TTS failed: {response.text}")
+    return response.content  # returns bytes
+
+# -------------------------------
+# Endpoint: process user audio
+# -------------------------------
+@app.route("/process_audio", methods=["POST"])
+def process_audio():
+    # Get form data
+    conv_id = request.form.get("conv_id")
+    audio_file = request.files.get("audio")
+
+    if not conv_id or not audio_file:
+        return jsonify({"error": "conv_id and audio file are required"}), 400
+
+    # Verify conversation exists
+    conversation = conversations_collection.find_one({"_id": ObjectId(conv_id)})
+    if not conversation:
+        return jsonify({"error": "Invalid conversation ID"}), 400
+
+    #Transcribe audio using speech to text (placeholder)
+    user_response = transcribe_audio_stt(audio_file)
+
+    # Fetch the previous turn
+    last_turn = conversation["conversation"][-1]
+    
+    
+    if last_turn["ai_text"] and last_turn["user_text"] is None:
+        #We know here that nothing wrong has happened with the AI/User turn order...
+        conversations_collection.update_one(
+            {"_id": ObjectId(conv_id), "conversation.turn": last_turn["turn"]},
+            {"$set": {"conversation.$.user_text": user_response}}
+        )
+    else:
+        #Something has gone wrong with the User/AI turn order
+        #The most recent turn does not have format AI:'sampletext', User_text:None
+        print("User/AI turn order has gone wrong. Check line 170, app.py")
+        
+    
+
+    #Fetch the updated conversation
+    conversation = conversations_collection.find_one({"_id": ObjectId(conv_id)})
+
+
+
+    # Build conversation context (including the full history)
+    context_text = ""
+    for turn_data in conversation.get("conversation", []):
+        ai_text = turn_data.get("ai_text")
+        user_text = turn_data.get("user_text")
+
+        if ai_text and ai_text.strip():
+            context_text += f"AI: {ai_text}\n"
+
+        if user_text and user_text.strip():
+            context_text += f"User: {user_text}\n"
+
+
+    # Generate AI response (placeholder)
+    ai_text = generate_ai_text(context_text)
+
+    # Create a new AI-only turn
+    new_turn_number = last_turn["turn"] + 1
+    conversations_collection.update_one(
+        {"_id": ObjectId(conv_id)},
+        {"$push": {"conversation": {
+            "turn": new_turn_number,
+            "user_text": None,
+            "ai_text": ai_text,
+            "created_at": datetime.now(timezone.utc)
+        }}}
+    )
+
+    # Generate TTS via ElevenLabs
+    ai_audio_bytes = elevenlabs_tts(ai_text)
+    ai_audio_b64 = base64.b64encode(ai_audio_bytes).decode("utf-8")  # frontend can use data URI
+
+    # Return response to frontend
+    return jsonify({
+        "user_text": user_text,
+        "ai_text": ai_text,
+        "ai_audio_b64": ai_audio_b64
+    }), 200
+
 
 if __name__ == "__main__":
     app.run(debug=True)

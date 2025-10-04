@@ -1,5 +1,5 @@
 Flask
 pymongo
 python-dotenv
-openai
 flask-cors
+requests
