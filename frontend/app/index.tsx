@@ -35,8 +35,7 @@ type HomeScreenProps = {
   onSchedule?: () => void;
 };
 
-const TUTOR_IMAGE =
-  'https://encrypted-tbn0.gstatic.com/images?q=tbn:ANd9GcQk3mDpjoXfNjGy_1uFgbn-9MCCurMXy125Sg&s';
+const TUTOR_IMAGE = require('../assets/images/Oli.png');
 
 const HIGHLIGHTS: Highlight[] = [
   {
@@ -98,11 +97,11 @@ export function HomeScreen({ onStartCall, onMoreInfo, onSchedule }: HomeScreenPr
 
       <View style={styles.card}>
         <View style={styles.tutorRow}>
-          <Image source={{ uri: TUTOR_IMAGE }} style={styles.tutorImage} />
+          <Image source={TUTOR_IMAGE} style={styles.tutorImage} />
           <View style={styles.tutorCopy}>
             <View style={styles.tutorHeader}>
-              <Text style={styles.tutorName}>SpeakFast</Text>
-              <View style={[styles.badge, styles.smallBadge]}>
+              <Text style={styles.tutorName}>Oli</Text>
+              <View style={styles.badge}>
                 <Text style={styles.badgeText}>AI Scenario Master</Text>
               </View>
             </View>
@@ -255,7 +254,7 @@ const styles = StyleSheet.create({
   badge: {
     borderRadius: 999,
     paddingHorizontal: 16,
-    paddingVertical: 6,
+    paddingVertical: 4,
     backgroundColor: 'rgba(251, 146, 60, 0.2)',
     borderWidth: 1,
     borderColor: 'rgba(251, 146, 60, 0.5)',
