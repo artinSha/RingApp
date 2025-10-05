@@ -1,7 +1,6 @@
 import AudioRecorderButton from "@/components/record-button";
 import { Feather } from "@expo/vector-icons";
 import { Audio } from "expo-av";
-import { File, Directory } from 'expo-file-system';
 import { LinearGradient } from "expo-linear-gradient";
 import { useRouter } from "expo-router";
 import React, { useEffect, useMemo, useRef, useState } from "react";
@@ -9,11 +8,11 @@ import {
   ActivityIndicator,
   Animated,
   Image,
+  ScrollView,
   StyleSheet,
   Text,
   TouchableOpacity,
   View,
-  ScrollView,
 } from "react-native";
 
 const BACKEND_URL = "https://ringapp-backend-production.up.railway.app";
@@ -56,6 +55,7 @@ export default function CallScreen() {
   const [user_transcript, setUserTranscript] = useState("");
   const [ai_transcript, setAITranscript] = useState("");
   const [sound, setSound] = useState<Audio.Sound | null>(null);
+  const [ringtoneSound, setRingtoneSound] = useState<Audio.Sound | null>(null);
   const [callDuration, setCallDuration] = useState(0);
   const [isAiSpeaking, setIsAiSpeaking] = useState(false);
   const [userTranscriptHistory, setUserTranscriptHistory] = useState<string[]>([]);
@@ -109,6 +109,53 @@ export default function CallScreen() {
     };
   }, [isConnected]);
 
+  // Ringtone effect - plays while not connected
+  useEffect(() => {
+    const handleRingtone = async () => {
+      if (!isConnected && !ringtoneSound) {
+        try {
+          console.log('Starting ringtone...');
+          
+          const { sound: newRingtone } = await Audio.Sound.createAsync(
+            require('../assets/ringtone.mp3'),
+            { 
+              isLooping: true,
+              volume: 0.7 // Adjust volume as needed (0.0 to 1.0)
+            }
+          );
+          
+          setRingtoneSound(newRingtone);
+          console.log('Sound loaded?', newRingtone);
+          await newRingtone.playAsync();
+          
+          
+        } catch (error) {
+          console.error('Error playing ringtone:', error);
+        }
+        
+      } else if (isConnected && ringtoneSound) {
+        try {
+          console.log('Stopping ringtone...');
+          await ringtoneSound.stopAsync();
+          await ringtoneSound.unloadAsync();
+          setRingtoneSound(null);
+        } catch (error) {
+          // console.error('Error stopping ringtone:', error);
+        }
+      }
+    };
+
+    handleRingtone();
+
+    // Cleanup function
+    return () => {
+      if (ringtoneSound) {
+        ringtoneSound.stopAsync();
+        ringtoneSound.unloadAsync();
+      }
+    };
+  }, [isConnected, ringtoneSound]);
+
   useEffect(() => {
     return () => {
       if (sound) {
@@ -140,14 +187,35 @@ export default function CallScreen() {
 
   const playBase64Audio = async (base64String: string) => {
     try {
-      console.log('Starting audio');
-      const file = new File(Directory + 'temp_audio.mp3', 'audio/mp3');
-      await file.write(base64String, { encoding: 'base64' });
-      const { sound } = await Audio.Sound.createAsync({ uri: file.uri });
-      await sound.playAsync();
-      console.log('Audio playing');
+      console.log('Starting audio playback...');
+      
+      // Create a data URI from the base64 string
+      // Assuming the backend returns MP3 format - adjust if needed
+      const audioUri = `data:audio/mp3;base64,${base64String}`;
+      
+      console.log('Created audio data URI');
+      
+      // Load and play the audio using expo-av
+      const { sound } = await Audio.Sound.createAsync(
+        { uri: audioUri },
+        { shouldPlay: true }
+      );
+      
+      console.log('Audio playing successfully');
+      
+      // Set up playback status update to handle cleanup
+      sound.setOnPlaybackStatusUpdate((status) => {
+        if (status.isLoaded && status.didJustFinish) {
+          console.log('Audio playback finished, cleaning up...');
+          sound.unloadAsync();
+        }
+      });
+      
+      return sound;
+      
     } catch (error) {
       console.error('Error playing audio:', error);
+      throw error;
     }
   };
 
