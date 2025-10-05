@@ -1,15 +1,14 @@
+import { Feather } from '@expo/vector-icons';
+import { useRouter } from 'expo-router';
 import React from 'react';
 import {
-  ScrollView,
-  View,
-  Text,
-  StyleSheet,
   Image,
+  ScrollView,
+  StyleSheet,
+  Text,
   TouchableOpacity,
+  View,
 } from 'react-native';
-import { useRouter } from 'expo-router';
-import { Feather } from '@expo/vector-icons';
-import * as Notifications from 'expo-notifications';
 
 type FeatherName = React.ComponentProps<typeof Feather>['name'];
 
@@ -94,7 +93,7 @@ export function HomeScreen({ onStartCall, onMoreInfo }: HomeScreenProps) {
           <Image source={{ uri: TUTOR_IMAGE }} style={styles.tutorImage} />
           <View style={styles.tutorCopy}>
             <View style={styles.tutorHeader}>
-              <Text style={styles.tutorName}>Lebron</Text>
+              <Text style={styles.tutorName}>SpeakFast</Text>
               <View style={[styles.badge, styles.smallBadge]}>
                 <Text style={styles.badgeText}>AI Scenario Master</Text>
               </View>
@@ -137,7 +136,7 @@ export function HomeScreen({ onStartCall, onMoreInfo }: HomeScreenProps) {
         ))}
       </View>
 
-      <View style={styles.card}>
+      {/* <View style={styles.card}>
         <Text style={styles.sectionTitle}>Recent Scenarios</Text>
         {RECENT_SCENARIOS.map(({ title, score, tone }) => (
           <View key={title} style={styles.scenarioRow}>
@@ -152,9 +151,9 @@ export function HomeScreen({ onStartCall, onMoreInfo }: HomeScreenProps) {
             </View>
           </View>
         ))}
-      </View>
+      </View> */}
 
-      <View style={styles.card}>
+      {/* <View style={styles.card}>
         <Text style={styles.sectionHint}>Your Progress</Text>
         <View style={styles.statsRow}>
           {STATS.map(({ label, value }) => (
@@ -168,7 +167,7 @@ export function HomeScreen({ onStartCall, onMoreInfo }: HomeScreenProps) {
             <Feather name="menu" size={18} color="#fff" />
             <Text style={styles.ctaText}>More Info</Text>
           </TouchableOpacity>
-      </View>
+      </View> */}
 
       <View style={styles.warning}>
         <Text style={styles.warningText}>
@@ -249,6 +248,8 @@ const styles = StyleSheet.create({
   },
   smallBadge: {
     alignSelf: 'flex-start',
+    flexShrink: 1,
+    maxWidth: '50%',
   },
   card: {
     borderRadius: 16,
@@ -275,11 +276,13 @@ const styles = StyleSheet.create({
     flexDirection: 'row',
     alignItems: 'center',
     gap: 8,
+    flexWrap: 'wrap',
   },
   tutorName: {
     fontSize: 18,
     fontWeight: '600',
     color: '#f9fafb',
+    flex: 1,
   },
   tutorSubtitle: {
     fontSize: 14,

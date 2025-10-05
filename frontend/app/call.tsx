@@ -43,7 +43,43 @@ const scenarios = [
       "Oh no! I'm so sorry about the mix-up. Can you tell me what you ordered originally?",
       "I'll send the correct pizza right away and you can keep the wrong one. Sound good?"
     ]
-  }
+  },
+  {
+    title: "🏨 Hotel Room Issue",
+    context: "The hotel front desk is calling you about a complaint regarding your room (dripping faucet, broken AC, or loud neighbors). You need to describe the issue and work with them to find a solution.",
+    aiLines: [
+      "Good evening, this is the front desk manager. We received a complaint about your room. Can you tell me what's happening?",
+      "I sincerely apologize for the inconvenience. Let me see what we can do to resolve this immediately.",
+      "I can offer you a room upgrade or have maintenance fix the issue right away. What would you prefer?"
+    ]
+  },
+  {
+    title: "💼 Unexpected Job Interview Call",
+    context: "A recruiter is calling you unexpectedly for a surprise phone interview about a new position. You need to show confidence and highlight your experience clearly.",
+    aiLines: [
+      "Hi, this is Sarah from TechCorp. I hope I'm not catching you at a bad time - do you have 10 minutes for a quick interview?",
+      "Great! Can you tell me about your most significant professional achievement in your current role?",
+      "That's impressive. How do you handle working under pressure and tight deadlines?"
+    ]
+  },
+  {
+    title: "🎒 Lost Luggage at the Airport",
+    context: "A baggage claim agent is calling you to discuss your missing luggage after your flight arrival. You need to describe your bag and arrange for delivery or pickup.",
+    aiLines: [
+      "Hello, this is Delta baggage services calling about your missing luggage from flight 1205. Can you describe your bag for me?",
+      "Thank you for those details. Can you tell me what items were inside so we can verify when we locate it?",
+      "Perfect. We should have it located within 24 hours. Would you prefer delivery to your hotel or pickup at the airport?"
+    ]
+  },
+  {
+    title: "🩺 Doctor Follow-Up Appointment",
+    context: "Your doctor is calling to discuss your recent test results and next steps. You need to understand the results and ask any clarifying questions about your health.",
+    aiLines: [
+      "Hi, this is Dr. Smith calling about your recent test results. Do you have a few minutes to discuss them?",
+      "Your blood work came back mostly normal, but there are a couple of things I'd like to go over with you.",
+      "I'd like to schedule a follow-up appointment to monitor this. Do you have any questions about what we've discussed?"
+    ]
+  },
 ];
 
 export default function CallScreen() {
@@ -64,7 +100,9 @@ export default function CallScreen() {
   const [isEndingCall, setIsEndingCall] = useState(false);
   const [conversationTurns, setConversationTurns] = useState(0);
   const [maxTurns] = useState(5);
+  const [isScenarioVisible, setIsScenarioVisible] = useState(true);
   const pulseAnim = useRef(new Animated.Value(0)).current;
+  const progressAnim = useRef(new Animated.Value(0)).current;
 
   const selectedScenario = useMemo(() => {
     return scenarios[Math.floor(Math.random() * scenarios.length)];
@@ -265,6 +303,10 @@ export default function CallScreen() {
       setIsLoading(true);
       setCallEnded(false); // Reset call ended state for new call
       setConversationTurns(0); // Reset turn counter for new call
+      
+      // Reset progress animation for new call
+      progressAnim.setValue(0);
+      
       const user_id = "68e1891a053b036af73ed31d"; 
       const scenario = selectedScenario.title;
       const response = await fetch(`${BACKEND_URL}/start_call`, {
@@ -304,26 +346,52 @@ export default function CallScreen() {
     setIsEndingCall(true);
     console.log('Ending call...');
     
+    // Always end call locally first to ensure UI responds
+    setCallEnded(true);
+    setIsConnected(false);
+    
     try {
+      // Check if we have a conversation ID
+      if (!convID) {
+        console.warn('No conversation ID available, ending call locally only');
+        // Navigate to home instead of feedback if no convID
+        router.push("/");
+        return;
+      }
+
+      // Create abort controller for timeout handling
+      const controller = new AbortController();
+      const timeoutId = setTimeout(() => controller.abort(), 10000); // 10 second timeout
+      
       // send convID to backend to get feedback data
       const response = await fetch(`${BACKEND_URL}/end_call`, {
         method: "POST",
         headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({ conv_id: convID })
+        body: JSON.stringify({ conv_id: convID }),
+        signal: controller.signal
       });
       
+      clearTimeout(timeoutId);
+      
       if (!response.ok) {
-        console.error("Error ending call:", response.statusText);
-        setIsEndingCall(false);
+        console.error("Backend error ending call:", response.status, response.statusText);
+        // Still end call locally and navigate to home
+        router.push("/");
         return;
       }
 
-      const data = await response.json();
-      // Mark call as ended to prevent ringtone on disconnect
-      setCallEnded(true);
-      
-      // Set connection state (useEffect will handle ringtone cleanup)
-      setIsConnected(false);
+      // Try to parse response
+      let data;
+      try {
+        data = await response.json();
+      } catch (parseError) {
+        console.error("Error parsing end call response:", parseError);
+        // End call locally and navigate to home
+        router.push("/");
+        return;
+      }
+
+      console.log("Call ended successfully, navigating to feedback");
       
       // Navigate to feedback with data
       router.push({
@@ -334,8 +402,19 @@ export default function CallScreen() {
           duration: callDuration.toString()
         }
       });
+      
     } catch (error) {
       console.error("Error ending call:", error);
+      
+      // Check if it's an abort error (timeout)
+      if (error instanceof Error && error.name === 'AbortError') {
+        console.log('End call request timed out');
+      }
+      
+      // Always ensure user can exit the call
+      // Navigate to home as fallback
+      router.push("/");
+    } finally {
       setIsEndingCall(false);
     }
   };
@@ -369,6 +448,13 @@ export default function CallScreen() {
     // Increment conversation turns
     const newTurnCount = conversationTurns + 1;
     setConversationTurns(newTurnCount);
+    
+    // Animate progress bar
+    Animated.timing(progressAnim, {
+      toValue: newTurnCount / maxTurns,
+      duration: 800,
+      useNativeDriver: false,
+    }).start();
     
     // console.log(data);
     var ai_b64 = data.ai_audio_b64;
@@ -418,7 +504,7 @@ export default function CallScreen() {
     <LinearGradient colors={["#0f172a", "#111827", "#020617"]} style={styles.container}>
       <View style={styles.backgroundLayer} />
 
-      {!isConnected ? (
+      {!isConnected && !isEndingCall ? (
         <View style={styles.incomingContent}>
           <View style={styles.header}>
             <Text style={styles.headerLabel}>Incoming Practice Call</Text>
@@ -442,7 +528,7 @@ export default function CallScreen() {
             </View>
 
             <View style={styles.avatarDetails}>
-              <Text style={styles.avatarName}>Lebron</Text>
+              <Text style={styles.avatarName}>SpeakFast</Text>
               <Text style={styles.avatarRole}>AI English Tutor</Text>
               <Text style={styles.avatarTagline}>Ready for an adventure?</Text>
             </View>
@@ -492,7 +578,7 @@ export default function CallScreen() {
                   style={styles.smallAvatar}
                 />
                 <View>
-                  <Text style={styles.connectedName}>Lebron</Text>
+                  <Text style={styles.connectedName}>SpeakFast</Text>
                   <View style={styles.statusRow}>
                     <View style={[styles.statusDot, { backgroundColor: isAiSpeaking ? '#fb923c' : '#10b981' }]} />
                     <Text style={styles.statusText}>
@@ -508,10 +594,23 @@ export default function CallScreen() {
           </View>
 
           {/* Scenario Info */}
-          <View style={styles.scenarioInfo}>
-            <Text style={styles.scenarioTitle}>{selectedScenario.title}</Text>
-            <Text style={styles.scenarioContext}>{selectedScenario.context}</Text>
-          </View>
+          {isScenarioVisible && (
+            <View style={styles.scenarioInfo}>
+              <View style={styles.scenarioHeader}>
+                <View style={styles.scenarioTitleContainer}>
+                  <Text style={styles.scenarioTitle}>{selectedScenario.title}</Text>
+                </View>
+                <TouchableOpacity
+                  style={styles.closeScenarioButton}
+                  onPress={() => setIsScenarioVisible(false)}
+                  activeOpacity={0.7}
+                >
+                  <Feather name="x" size={18} color="#9ca3af" />
+                </TouchableOpacity>
+              </View>
+              <Text style={styles.scenarioContext}>{selectedScenario.context}</Text>
+            </View>
+          )}
 
           {/* Progress Bar */}
           <View style={styles.progressContainer}>
@@ -520,10 +619,16 @@ export default function CallScreen() {
               <Text style={styles.progressCount}>{conversationTurns}/{maxTurns}</Text>
             </View>
             <View style={styles.progressBarTrack}>
-              <View 
+              <Animated.View 
                 style={[
                   styles.progressBarFill, 
-                  { width: `${(conversationTurns / maxTurns) * 100}%` }
+                  { 
+                    width: progressAnim.interpolate({
+                      inputRange: [0, 1],
+                      outputRange: ['0%', '100%'],
+                      extrapolate: 'clamp',
+                    })
+                  }
                 ]} 
               />
             </View>
@@ -550,7 +655,7 @@ export default function CallScreen() {
             {messages.length === 0 && isAiSpeaking && (
               <View style={styles.loadingContainer}>
                 <ActivityIndicator size="small" color="#fb923c" />
-                <Text style={styles.loadingChatText}>Lebron is preparing the scenario...</Text>
+                <Text style={styles.loadingChatText}>SpeakFast is preparing the scenario...</Text>
               </View>
             )}
 
@@ -630,6 +735,13 @@ export default function CallScreen() {
         <View style={styles.loadingOverlay}>
           <ActivityIndicator size="large" color="#fb923c" />
           <Text style={styles.loadingText}>Connecting…</Text>
+        </View>
+      )}
+
+      {isEndingCall && (
+        <View style={styles.loadingOverlay}>
+          <ActivityIndicator size="large" color="#fb923c" />
+          <Text style={styles.loadingText}>Ending call…</Text>
         </View>
       )}
     </LinearGradient>
@@ -853,11 +965,29 @@ const styles = StyleSheet.create({
     borderBottomWidth: 1,
     borderBottomColor: "rgba(51, 65, 85, 0.5)",
   },
+  scenarioHeader: {
+    flexDirection: "row",
+    alignItems: "flex-start",
+    justifyContent: "space-between",
+    marginBottom: 4,
+  },
+  scenarioTitleContainer: {
+    flex: 1,
+    marginRight: 8,
+  },
   scenarioTitle: {
     color: "#fb923c",
     fontSize: 14,
     fontWeight: "600",
-    marginBottom: 4,
+  },
+  closeScenarioButton: {
+    width: 24,
+    height: 24,
+    borderRadius: 12,
+    backgroundColor: "rgba(55, 65, 81, 0.6)",
+    alignItems: "center",
+    justifyContent: "center",
+    marginTop: -2,
   },
   scenarioContext: {
     color: "rgba(226, 232, 240, 0.7)",

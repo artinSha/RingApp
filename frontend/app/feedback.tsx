@@ -1,6 +1,7 @@
 import { Feather } from "@expo/vector-icons";
 import { LinearGradient } from "expo-linear-gradient";
 import { useLocalSearchParams, useRouter } from "expo-router";
+import React, { useState } from "react";
 import {
   ScrollView,
   StyleSheet,
@@ -12,6 +13,7 @@ import {
 export default function ResultsScreen() {
   const router = useRouter();
   const params = useLocalSearchParams();
+  const [isTranscriptExpanded, setIsTranscriptExpanded] = useState(false);
   
   // Parse the feedback data from params
   let feedbackData = null;
@@ -128,14 +130,28 @@ export default function ResultsScreen() {
           <Text style={styles.encouragement}>{summary.encouragement}</Text>
         </View>
 
-        <View style={styles.card}>
+        <TouchableOpacity 
+          style={styles.card}
+          activeOpacity={0.8}
+          onPress={() => setIsTranscriptExpanded(!isTranscriptExpanded)}
+        >
           <View style={styles.sectionHeader}>
             <Feather name="message-square" size={20} color="#fb923c" />
             <Text style={styles.sectionTitle}>Conversation Transcript</Text>
+            <View style={styles.transcriptMeta}>
+              <Text style={styles.transcriptCount}>
+                {Math.max((summary.aiTranscript || []).length, (summary.userTranscript || []).length)} exchanges
+              </Text>
+              <Feather 
+                name={isTranscriptExpanded ? "chevron-up" : "chevron-down"} 
+                size={20} 
+                color="#9ca3af" 
+              />
+            </View>
           </View>
 
-          <View style={styles.transcriptList}>
-            {(summary.aiTranscript || []).map((aiMessage: string, index: number) => (
+          <View style={[styles.transcriptList, !isTranscriptExpanded && styles.transcriptCollapsed]}>
+            {(summary.aiTranscript || []).slice(0, isTranscriptExpanded ? undefined : 2).map((aiMessage: string, index: number) => (
               <View key={index} style={styles.transcriptItem}>
                 <View style={styles.messageRow}>
                   <View style={[styles.avatar, styles.avatarAi]}>
@@ -158,14 +174,36 @@ export default function ResultsScreen() {
                 ) : null}
               </View>
             ))}
+            
+            {!isTranscriptExpanded && (summary.aiTranscript || []).length > 2 && (
+              <View style={styles.moreMessagesIndicator}>
+                <Text style={styles.moreMessagesText}>
+                  +{(summary.aiTranscript || []).length - 2} more exchanges...
+                </Text>
+                <Text style={styles.tapToExpandText}>Tap header to expand</Text>
+              </View>
+            )}
           </View>
-        </View>
+        </TouchableOpacity>
 
         {(summary.grammarErrors || []).length > 0 && (
-          <View style={styles.card}>
+          <TouchableOpacity 
+            style={styles.card}
+            activeOpacity={0.8}
+            onPress={() => {
+              router.push({
+                pathname: "/grammar-feedback" as any,
+                params: { 
+                  feedbackData: params.feedbackData,
+                  grammarErrors: JSON.stringify(summary.grammarErrors || [])
+                }
+              });
+            }}
+          >
             <View style={styles.sectionHeader}>
               <Feather name="x-circle" size={20} color="#f87171" />
               <Text style={styles.sectionTitle}>Grammar Feedback</Text>
+              <Feather name="chevron-right" size={20} color="#9ca3af" style={{marginLeft: 'auto'}} />
             </View>
 
             <View style={styles.grammarList}>
@@ -182,7 +220,7 @@ export default function ResultsScreen() {
                 </View>
               ))}
             </View>
-          </View>
+          </TouchableOpacity>
         )}
 
         <View style={styles.actions}>
@@ -300,11 +338,13 @@ const styles = StyleSheet.create({
     alignItems: "center",
     gap: 8,
     marginBottom: 16,
+    flex: 1,
   },
   sectionTitle: {
     color: "#f9fafb",
     fontSize: 18,
     fontWeight: "600",
+    flex: 1,
   },
   transcriptList: {
     gap: 20,
@@ -449,5 +489,39 @@ const styles = StyleSheet.create({
     fontSize: 12,
     textTransform: "uppercase",
     letterSpacing: 0.8,
+  },
+  transcriptMeta: {
+    flexDirection: "row",
+    alignItems: "center",
+    gap: 8,
+    marginLeft: "auto",
+    flexShrink: 0,
+  },
+  transcriptCount: {
+    color: "#9ca3af",
+    fontSize: 12,
+    fontWeight: "500",
+  },
+  transcriptCollapsed: {
+    maxHeight: 300,
+    overflow: "hidden",
+  },
+  moreMessagesIndicator: {
+    alignItems: "center",
+    paddingVertical: 16,
+    borderTopWidth: 1,
+    borderTopColor: "rgba(75,85,99,0.3)",
+    marginTop: 12,
+  },
+  moreMessagesText: {
+    color: "#9ca3af",
+    fontSize: 14,
+    fontWeight: "500",
+    marginBottom: 4,
+  },
+  tapToExpandText: {
+    color: "#6b7280",
+    fontSize: 12,
+    fontStyle: "italic",
   },
 });
