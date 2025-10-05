@@ -1,8 +1,0 @@
-Flask
-pymongo
-python-dotenv
-google.generativeai
-flask-cors
-google.cloud
-sounddevice
-requests
