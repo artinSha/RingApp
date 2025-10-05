@@ -61,6 +61,7 @@ export default function CallScreen() {
   const [userTranscriptHistory, setUserTranscriptHistory] = useState<string[]>([]);
   const [aiTranscriptHistory, setAiTranscriptHistory] = useState<string[]>([]);
   const [isListening, setIsListening] = useState(false);
+  const [isEndingCall, setIsEndingCall] = useState(false);
   const pulseAnim = useRef(new Animated.Value(0)).current;
 
   const selectedScenario = useMemo(() => {
@@ -279,16 +280,40 @@ export default function CallScreen() {
   };
 
   const endCall = async () => {
+    if (isEndingCall) return; // Prevent multiple clicks
+    
+    setIsEndingCall(true);
     console.log('Ending call...');
     
-    // Mark call as ended to prevent ringtone on disconnect
-    setCallEnded(true);
-    
-    // Set connection state (useEffect will handle ringtone cleanup)
-    setIsConnected(false);
-    
-    // Navigate to feedback
-    router.push("/feedback");
+    try {
+      // send convID to backend to get feedback data
+      const response = await fetch(`${BACKEND_URL}/end_call`, {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ conv_id: convID })
+      });
+      
+      if (!response.ok) {
+        console.error("Error ending call:", response.statusText);
+        setIsEndingCall(false);
+        return;
+      }
+
+      const data = await response.json();
+      console.log("feedback data:", data);
+
+      // Mark call as ended to prevent ringtone on disconnect
+      setCallEnded(true);
+      
+      // Set connection state (useEffect will handle ringtone cleanup)
+      setIsConnected(false);
+      
+      // Navigate to feedback
+      router.push("/feedback");
+    } catch (error) {
+      console.error("Error ending call:", error);
+      setIsEndingCall(false);
+    }
   };
 
   const handleRecordingComplete = async (uri: string) => {
@@ -396,7 +421,10 @@ export default function CallScreen() {
             <TouchableOpacity
               activeOpacity={0.7}
               style={[styles.circleButton, styles.declineButton]}
-              onPress={() => router.push("/")}
+              onPress={() => {
+                setCallEnded(true); // Stop ringtone before navigating
+                router.push("/");
+              }}
             >
               <Feather name="phone-off" size={32} color="#fca5a5" />
             </TouchableOpacity>
@@ -511,9 +539,20 @@ export default function CallScreen() {
             <AudioRecorderButton onRecordingComplete={handleRecordingComplete} />
             <Text style={styles.recorderHint}>Tap to send your response</Text>
             
-            <TouchableOpacity activeOpacity={0.85} style={styles.endCallButton} onPress={endCall}>
-              <Feather name="phone-off" size={20} color="#fff" />
-              <Text style={styles.endCallText}>End Call</Text>
+            <TouchableOpacity 
+              activeOpacity={0.85} 
+              style={[styles.endCallButton, isEndingCall && styles.disabledButton]} 
+              onPress={endCall}
+              disabled={isEndingCall}
+            >
+              {isEndingCall ? (
+                <ActivityIndicator size="small" color="#fff" />
+              ) : (
+                <Feather name="phone-off" size={20} color="#fff" />
+              )}
+              <Text style={styles.endCallText}>
+                {isEndingCall ? 'Ending...' : 'End Call'}
+              </Text>
             </TouchableOpacity>
           </View>
         </View>
