@@ -43,7 +43,43 @@ const scenarios = [
       "Oh no! I'm so sorry about the mix-up. Can you tell me what you ordered originally?",
       "I'll send the correct pizza right away and you can keep the wrong one. Sound good?"
     ]
-  }
+  },
+  {
+    title: "🏨 Hotel Room Issue",
+    context: "The hotel front desk is calling you about a complaint regarding your room (dripping faucet, broken AC, or loud neighbors). You need to describe the issue and work with them to find a solution.",
+    aiLines: [
+      "Good evening, this is the front desk manager. We received a complaint about your room. Can you tell me what's happening?",
+      "I sincerely apologize for the inconvenience. Let me see what we can do to resolve this immediately.",
+      "I can offer you a room upgrade or have maintenance fix the issue right away. What would you prefer?"
+    ]
+  },
+  {
+    title: "💼 Unexpected Job Interview Call",
+    context: "A recruiter is calling you unexpectedly for a surprise phone interview about a new position. You need to show confidence and highlight your experience clearly.",
+    aiLines: [
+      "Hi, this is Sarah from TechCorp. I hope I'm not catching you at a bad time - do you have 10 minutes for a quick interview?",
+      "Great! Can you tell me about your most significant professional achievement in your current role?",
+      "That's impressive. How do you handle working under pressure and tight deadlines?"
+    ]
+  },
+  {
+    title: "🎒 Lost Luggage at the Airport",
+    context: "A baggage claim agent is calling you to discuss your missing luggage after your flight arrival. You need to describe your bag and arrange for delivery or pickup.",
+    aiLines: [
+      "Hello, this is Delta baggage services calling about your missing luggage from flight 1205. Can you describe your bag for me?",
+      "Thank you for those details. Can you tell me what items were inside so we can verify when we locate it?",
+      "Perfect. We should have it located within 24 hours. Would you prefer delivery to your hotel or pickup at the airport?"
+    ]
+  },
+  {
+    title: "🩺 Doctor Follow-Up Appointment",
+    context: "Your doctor is calling to discuss your recent test results and next steps. You need to understand the results and ask any clarifying questions about your health.",
+    aiLines: [
+      "Hi, this is Dr. Smith calling about your recent test results. Do you have a few minutes to discuss them?",
+      "Your blood work came back mostly normal, but there are a couple of things I'd like to go over with you.",
+      "I'd like to schedule a follow-up appointment to monitor this. Do you have any questions about what we've discussed?"
+    ]
+  },
 ];
 
 export default function CallScreen() {
