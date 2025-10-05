@@ -86,6 +86,7 @@ export default function CallScreen() {
   const router = useRouter();
   const [convID, setConvID] = useState<string | null>(null);
   const [isConnected, setIsConnected] = useState(false);
+  const [hasSpoken, setHasSpoken] = useState(false);
   const [callEnded, setCallEnded] = useState(false); // Track if call was ended by user
   const [isLoading, setIsLoading] = useState(false);
   const [user_transcript, setUserTranscript] = useState("");
@@ -341,6 +342,10 @@ export default function CallScreen() {
   };
 
   const endCall = async () => {
+    if (!hasSpoken) {
+      router.push("/");
+      return;
+    }
     if (isEndingCall) return; // Prevent multiple clicks
     
     setIsEndingCall(true);
@@ -425,6 +430,7 @@ export default function CallScreen() {
       return;
     }
 
+    setHasSpoken(true);
     setIsListening(true);
 
     // Upload to backend
