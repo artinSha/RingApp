@@ -1,7 +1,6 @@
 import AudioRecorderButton from "@/components/record-button";
 import { Feather } from "@expo/vector-icons";
 import { Audio } from "expo-av";
-import { File, Directory } from 'expo-file-system';
 import { LinearGradient } from "expo-linear-gradient";
 import { useRouter } from "expo-router";
 import React, { useEffect, useMemo, useRef, useState } from "react";
@@ -9,11 +8,11 @@ import {
   ActivityIndicator,
   Animated,
   Image,
+  ScrollView,
   StyleSheet,
   Text,
   TouchableOpacity,
   View,
-  ScrollView,
 } from "react-native";
 
 const BACKEND_URL = "https://ringapp-backend-production.up.railway.app";
@@ -51,10 +50,12 @@ export default function CallScreen() {
   const router = useRouter();
   const [convID, setConvID] = useState<string | null>(null);
   const [isConnected, setIsConnected] = useState(false);
+  const [callEnded, setCallEnded] = useState(false); // Track if call was ended by user
   const [isLoading, setIsLoading] = useState(false);
   const [user_transcript, setUserTranscript] = useState("");
   const [ai_transcript, setAITranscript] = useState("");
   const [sound, setSound] = useState<Audio.Sound | null>(null);
+  const [ringtoneSound, setRingtoneSound] = useState<Audio.Sound | null>(null);
   const [callDuration, setCallDuration] = useState(0);
   const [isAiSpeaking, setIsAiSpeaking] = useState(false);
   const [userTranscriptHistory, setUserTranscriptHistory] = useState<string[]>([]);
@@ -108,6 +109,75 @@ export default function CallScreen() {
     };
   }, [isConnected]);
 
+  // Ringtone effect - plays while not connected (but only for incoming calls, not ended calls)
+  useEffect(() => {
+    const handleRingtone = async () => {
+      if (!isConnected && !ringtoneSound && !callEnded) {
+        try {
+          console.log('Starting ringtone for incoming call...');
+          
+          // Set audio mode for ringtone playback
+          await Audio.setAudioModeAsync({
+            playsInSilentModeIOS: true,
+            allowsRecordingIOS: false,
+          });
+          
+          const { sound: newRingtone } = await Audio.Sound.createAsync(
+            require('../assets/ringtone.mp3'),
+            { 
+              isLooping: true,
+              volume: 1,
+              shouldPlay: false
+            }
+          );
+          
+          setRingtoneSound(newRingtone);
+          await newRingtone.playAsync();
+          
+        } catch (error) {
+          console.error('Error playing ringtone:', error);
+        }
+        
+      } else if (isConnected && ringtoneSound) {
+        try {
+          console.log('Stopping ringtone...');
+          await ringtoneSound.stopAsync();
+          await ringtoneSound.unloadAsync();
+          setRingtoneSound(null);
+          
+        } catch (error) {
+          console.error('Error stopping ringtone:', error);
+        }
+      }
+    };
+
+    handleRingtone();
+
+    // Cleanup function
+    return () => {
+      if (ringtoneSound) {
+        ringtoneSound.stopAsync();
+        ringtoneSound.unloadAsync();
+        setRingtoneSound(null);
+      }
+    };
+  }, [isConnected, ringtoneSound, callEnded]);
+
+  // Cleanup effect - runs when component unmounts
+  useEffect(() => {
+    return () => {
+      console.log('Component unmounting, cleaning up audio...');
+      // Stop all audio when component unmounts
+      if (ringtoneSound) {
+        ringtoneSound.stopAsync();
+        ringtoneSound.unloadAsync();
+      }
+      if (sound) {
+        sound.unloadAsync();
+      }
+    };
+  }, []);
+
   useEffect(() => {
     return () => {
       if (sound) {
@@ -139,20 +209,42 @@ export default function CallScreen() {
 
   const playBase64Audio = async (base64String: string) => {
     try {
-      console.log('Starting audio');
-      const file = new File(Directory + 'temp_audio.mp3', 'audio/mp3');
-      await file.write(base64String, { encoding: 'base64' });
-      const { sound } = await Audio.Sound.createAsync({ uri: file.uri });
-      await sound.playAsync();
-      console.log('Audio playing');
+      console.log('Starting audio playback...');
+      
+      // Create a data URI from the base64 string
+      // Assuming the backend returns MP3 format - adjust if needed
+      const audioUri = `data:audio/mp3;base64,${base64String}`;
+      
+      console.log('Created audio data URI');
+      
+      // Load and play the audio using expo-av
+      const { sound } = await Audio.Sound.createAsync(
+        { uri: audioUri },
+        { shouldPlay: true }
+      );
+      
+      console.log('Audio playing successfully');
+      
+      // Set up playback status update to handle cleanup
+      sound.setOnPlaybackStatusUpdate((status) => {
+        if (status.isLoaded && status.didJustFinish) {
+          console.log('Audio playback finished, cleaning up...');
+          sound.unloadAsync();
+        }
+      });
+      
+      return sound;
+      
     } catch (error) {
       console.error('Error playing audio:', error);
+      throw error;
     }
   };
 
   const startCall = async () => {
     try {
       setIsLoading(true);
+      setCallEnded(false); // Reset call ended state for new call
       const user_id = "68e1891a053b036af73ed31d"; 
       const scenario = selectedScenario.title;
       const response = await fetch(`${BACKEND_URL}/start_call`, {
@@ -185,8 +277,16 @@ export default function CallScreen() {
     }
   };
 
-  const endCall = () => {
+  const endCall = async () => {
+    console.log('Ending call...');
+    
+    // Mark call as ended to prevent ringtone on disconnect
+    setCallEnded(true);
+    
+    // Set connection state (useEffect will handle ringtone cleanup)
     setIsConnected(false);
+    
+    // Navigate to feedback
     router.push("/feedback");
   };
 
@@ -216,7 +316,7 @@ export default function CallScreen() {
     setUserTranscriptHistory(prev => [...prev, data.user_text]);
     setAiTranscriptHistory(prev => [...prev, data.ai_text]);
     
-    console.log(data);
+    // console.log(data);
     var ai_b64 = data.ai_audio_b64;
 
     setIsListening(false);
