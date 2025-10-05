@@ -65,6 +65,7 @@ export default function CallScreen() {
   const [conversationTurns, setConversationTurns] = useState(0);
   const [maxTurns] = useState(5);
   const pulseAnim = useRef(new Animated.Value(0)).current;
+  const progressAnim = useRef(new Animated.Value(0)).current;
 
   const selectedScenario = useMemo(() => {
     return scenarios[Math.floor(Math.random() * scenarios.length)];
