@@ -266,8 +266,9 @@ export default function CallScreen() {
         // Start with AI speaking
         setIsAiSpeaking(true);
         setTimeout(() => {
-          const firstMessage = selectedScenario.aiLines[0];
+          const firstMessage = data.initial_ai_text;
           setAiTranscriptHistory([firstMessage]);
+          playBase64Audio(data.initial_ai_audio_b64); // Play initial AI line audio
           setIsAiSpeaking(false);
         }, 2000);
       }, 1500);
