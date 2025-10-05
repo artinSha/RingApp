@@ -454,7 +454,15 @@ export default function CallScreen() {
     // Increment conversation turns
     const newTurnCount = conversationTurns + 1;
     setConversationTurns(newTurnCount);
-    
+
+    // Check if we've reached max turns and auto-end call
+    if (newTurnCount >= maxTurns) {
+      console.log(`Reached maximum turns (${maxTurns}), auto-ending call...`);
+      setTimeout(() => {
+        endCall();
+      }, 10); 
+    }
+      
     // Animate progress bar
     Animated.timing(progressAnim, {
       toValue: newTurnCount / maxTurns,
@@ -479,15 +487,7 @@ export default function CallScreen() {
       await playBase64Audio(ai_b64);
       setIsAiSpeaking(false);
       console.log("AI audio playback finished.");
-      
-      // Check if we've reached max turns and auto-end call
-      if (newTurnCount >= maxTurns) {
-        console.log(`Reached maximum turns (${maxTurns}), auto-ending call...`);
-        setTimeout(() => {
-          endCall();
-        }, 2000); // Wait 2 seconds after AI finishes speaking
-      }
-    } catch (error) {
+        } catch (error) {
       console.error('Error playing audio:', error);
       setIsAiSpeaking(false);
     }
