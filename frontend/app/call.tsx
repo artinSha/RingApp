@@ -300,8 +300,6 @@ export default function CallScreen() {
       }
 
       const data = await response.json();
-      console.log("feedback data:", data);
-
       // Mark call as ended to prevent ringtone on disconnect
       setCallEnded(true);
       
