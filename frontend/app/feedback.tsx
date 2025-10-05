@@ -1,12 +1,12 @@
-import { LinearGradient } from "expo-linear-gradient";
-import { useRouter, useLocalSearchParams } from "expo-router";
 import { Feather } from "@expo/vector-icons";
+import { LinearGradient } from "expo-linear-gradient";
+import { useLocalSearchParams, useRouter } from "expo-router";
 import {
-  View,
-  Text,
-  StyleSheet,
   ScrollView,
+  StyleSheet,
+  Text,
   TouchableOpacity,
+  View,
 } from "react-native";
 
 export default function ResultsScreen() {
@@ -17,7 +17,6 @@ export default function ResultsScreen() {
   let feedbackData = null;
   try {
     feedbackData = params.feedbackData ? JSON.parse(params.feedbackData as string) : null;
-    console.log('Received feedback data:', feedbackData);
   } catch (error) {
     console.error('Error parsing feedback data:', error);
   }

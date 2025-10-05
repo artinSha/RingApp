@@ -62,6 +62,8 @@ export default function CallScreen() {
   const [aiTranscriptHistory, setAiTranscriptHistory] = useState<string[]>([]);
   const [isListening, setIsListening] = useState(false);
   const [isEndingCall, setIsEndingCall] = useState(false);
+  const [conversationTurns, setConversationTurns] = useState(0);
+  const [maxTurns] = useState(5);
   const pulseAnim = useRef(new Animated.Value(0)).current;
 
   const selectedScenario = useMemo(() => {
@@ -139,15 +141,22 @@ export default function CallScreen() {
           console.error('Error playing ringtone:', error);
         }
         
-      } else if (isConnected && ringtoneSound) {
+      } else if ((isConnected || callEnded) && ringtoneSound) {
         try {
           console.log('Stopping ringtone...');
-          await ringtoneSound.stopAsync();
-          await ringtoneSound.unloadAsync();
+          
+          // Check if the sound is still loaded before trying to stop it
+          const status = await ringtoneSound.getStatusAsync();
+          if (status.isLoaded) {
+            await ringtoneSound.stopAsync();
+            await ringtoneSound.unloadAsync();
+          }
           setRingtoneSound(null);
           
         } catch (error) {
-          console.error('Error stopping ringtone:', error);
+          console.warn('Error stopping ringtone (this is usually harmless):', error);
+          // Still set ringtoneSound to null even if there was an error
+          setRingtoneSound(null);
         }
       }
     };
@@ -157,8 +166,13 @@ export default function CallScreen() {
     // Cleanup function
     return () => {
       if (ringtoneSound) {
-        ringtoneSound.stopAsync();
-        ringtoneSound.unloadAsync();
+        // Use a safer cleanup that doesn't throw errors
+        ringtoneSound.getStatusAsync().then((status) => {
+          if (status.isLoaded) {
+            ringtoneSound.stopAsync().catch(() => {}); // Ignore errors
+            ringtoneSound.unloadAsync().catch(() => {}); // Ignore errors
+          }
+        }).catch(() => {}); // Ignore status check errors too
         setRingtoneSound(null);
       }
     };
@@ -168,13 +182,17 @@ export default function CallScreen() {
   useEffect(() => {
     return () => {
       console.log('Component unmounting, cleaning up audio...');
-      // Stop all audio when component unmounts
+      // Stop all audio when component unmounts with error handling
       if (ringtoneSound) {
-        ringtoneSound.stopAsync();
-        ringtoneSound.unloadAsync();
+        ringtoneSound.getStatusAsync().then((status) => {
+          if (status.isLoaded) {
+            ringtoneSound.stopAsync().catch(() => {});
+            ringtoneSound.unloadAsync().catch(() => {});
+          }
+        }).catch(() => {});
       }
       if (sound) {
-        sound.unloadAsync();
+        sound.unloadAsync().catch(() => {});
       }
     };
   }, []);
@@ -182,7 +200,7 @@ export default function CallScreen() {
   useEffect(() => {
     return () => {
       if (sound) {
-        sound.unloadAsync();
+        sound.unloadAsync().catch(() => {});
       }
     };
   }, [sound]);
@@ -246,6 +264,7 @@ export default function CallScreen() {
     try {
       setIsLoading(true);
       setCallEnded(false); // Reset call ended state for new call
+      setConversationTurns(0); // Reset turn counter for new call
       const user_id = "68e1891a053b036af73ed31d"; 
       const scenario = selectedScenario.title;
       const response = await fetch(`${BACKEND_URL}/start_call`, {
@@ -300,7 +319,8 @@ export default function CallScreen() {
       }
 
       const data = await response.json();
-      console.log("feedback data:", data);
+      console.log("Full response data:\n", JSON.stringify(data, null, 2));
+      console.log("Grammar feedback:\n", JSON.stringify(data.grammar_feedback, null, 2));
 
       // Mark call as ended to prevent ringtone on disconnect
       setCallEnded(true);
@@ -349,6 +369,10 @@ export default function CallScreen() {
     setUserTranscriptHistory(prev => [...prev, data.user_text]);
     setAiTranscriptHistory(prev => [...prev, data.ai_text]);
     
+    // Increment conversation turns
+    const newTurnCount = conversationTurns + 1;
+    setConversationTurns(newTurnCount);
+    
     // console.log(data);
     var ai_b64 = data.ai_audio_b64;
 
@@ -366,6 +390,14 @@ export default function CallScreen() {
       await playBase64Audio(ai_b64);
       setIsAiSpeaking(false);
       console.log("AI audio playback finished.");
+      
+      // Check if we've reached max turns and auto-end call
+      if (newTurnCount >= maxTurns) {
+        console.log(`Reached maximum turns (${maxTurns}), auto-ending call...`);
+        setTimeout(() => {
+          endCall();
+        }, 2000); // Wait 2 seconds after AI finishes speaking
+      }
     } catch (error) {
       console.error('Error playing audio:', error);
       setIsAiSpeaking(false);
@@ -482,6 +514,38 @@ export default function CallScreen() {
           <View style={styles.scenarioInfo}>
             <Text style={styles.scenarioTitle}>{selectedScenario.title}</Text>
             <Text style={styles.scenarioContext}>{selectedScenario.context}</Text>
+          </View>
+
+          {/* Progress Bar */}
+          <View style={styles.progressContainer}>
+            <View style={styles.progressHeader}>
+              <Text style={styles.progressLabel}>Conversation Progress</Text>
+              <Text style={styles.progressCount}>{conversationTurns}/{maxTurns}</Text>
+            </View>
+            <View style={styles.progressBarTrack}>
+              <View 
+                style={[
+                  styles.progressBarFill, 
+                  { width: `${(conversationTurns / maxTurns) * 100}%` }
+                ]} 
+              />
+            </View>
+            <View style={styles.progressDots}>
+              {Array.from({ length: maxTurns }, (_, index) => (
+                <View
+                  key={index}
+                  style={[
+                    styles.progressDot,
+                    index < conversationTurns && styles.progressDotCompleted
+                  ]}
+                />
+              ))}
+            </View>
+            {conversationTurns === maxTurns - 1 && (
+              <Text style={styles.warningText}>
+                ⚠️ One more turn before call ends automatically
+              </Text>
+            )}
           </View>
 
           {/* Chat Messages */}
@@ -802,6 +866,65 @@ const styles = StyleSheet.create({
     color: "rgba(226, 232, 240, 0.7)",
     fontSize: 12,
     lineHeight: 18,
+  },
+  progressContainer: {
+    paddingHorizontal: 24,
+    paddingVertical: 16,
+    backgroundColor: "rgba(15, 23, 42, 0.8)",
+    borderBottomWidth: 1,
+    borderBottomColor: "rgba(51, 65, 85, 0.5)",
+  },
+  progressHeader: {
+    flexDirection: "row",
+    justifyContent: "space-between",
+    alignItems: "center",
+    marginBottom: 12,
+  },
+  progressLabel: {
+    color: "#e2e8f0",
+    fontSize: 14,
+    fontWeight: "500",
+  },
+  progressCount: {
+    color: "#fb923c",
+    fontSize: 14,
+    fontWeight: "600",
+  },
+  progressBarTrack: {
+    height: 6,
+    backgroundColor: "rgba(51, 65, 85, 0.6)",
+    borderRadius: 3,
+    marginBottom: 12,
+    overflow: "hidden",
+  },
+  progressBarFill: {
+    height: "100%",
+    backgroundColor: "#fb923c",
+    borderRadius: 3,
+  },
+  progressDots: {
+    flexDirection: "row",
+    justifyContent: "space-between",
+    alignItems: "center",
+  },
+  progressDot: {
+    width: 12,
+    height: 12,
+    borderRadius: 6,
+    backgroundColor: "rgba(51, 65, 85, 0.6)",
+    borderWidth: 2,
+    borderColor: "rgba(71, 85, 105, 0.5)",
+  },
+  progressDotCompleted: {
+    backgroundColor: "#fb923c",
+    borderColor: "#fb923c",
+  },
+  warningText: {
+    color: "#fbbf24",
+    fontSize: 12,
+    textAlign: "center",
+    marginTop: 8,
+    fontWeight: "500",
   },
   chatContainer: {
     flex: 1,
