@@ -51,6 +51,7 @@ export default function CallScreen() {
   const router = useRouter();
   const [convID, setConvID] = useState<string | null>(null);
   const [isConnected, setIsConnected] = useState(false);
+  const [callEnded, setCallEnded] = useState(false); // Track if call was ended by user
   const [isLoading, setIsLoading] = useState(false);
   const [user_transcript, setUserTranscript] = useState("");
   const [ai_transcript, setAITranscript] = useState("");
@@ -109,25 +110,30 @@ export default function CallScreen() {
     };
   }, [isConnected]);
 
-  // Ringtone effect - plays while not connected
+  // Ringtone effect - plays while not connected (but only for incoming calls, not ended calls)
   useEffect(() => {
     const handleRingtone = async () => {
-      if (!isConnected && !ringtoneSound) {
+      if (!isConnected && !ringtoneSound && !callEnded) {
         try {
-          console.log('Starting ringtone...');
+          console.log('Starting ringtone for incoming call...');
+          
+          // Set audio mode for ringtone playback
+          await Audio.setAudioModeAsync({
+            playsInSilentModeIOS: true,
+            allowsRecordingIOS: false,
+          });
           
           const { sound: newRingtone } = await Audio.Sound.createAsync(
             require('../assets/ringtone.mp3'),
             { 
               isLooping: true,
-              volume: 0.7 // Adjust volume as needed (0.0 to 1.0)
+              volume: 1,
+              shouldPlay: false
             }
           );
           
           setRingtoneSound(newRingtone);
-          console.log('Sound loaded?', newRingtone);
           await newRingtone.playAsync();
-          
           
         } catch (error) {
           console.error('Error playing ringtone:', error);
@@ -139,8 +145,9 @@ export default function CallScreen() {
           await ringtoneSound.stopAsync();
           await ringtoneSound.unloadAsync();
           setRingtoneSound(null);
+          
         } catch (error) {
-          // console.error('Error stopping ringtone:', error);
+          console.error('Error stopping ringtone:', error);
         }
       }
     };
@@ -152,9 +159,25 @@ export default function CallScreen() {
       if (ringtoneSound) {
         ringtoneSound.stopAsync();
         ringtoneSound.unloadAsync();
+        setRingtoneSound(null);
       }
     };
-  }, [isConnected, ringtoneSound]);
+  }, [isConnected, ringtoneSound, callEnded]);
+
+  // Cleanup effect - runs when component unmounts
+  useEffect(() => {
+    return () => {
+      console.log('Component unmounting, cleaning up audio...');
+      // Stop all audio when component unmounts
+      if (ringtoneSound) {
+        ringtoneSound.stopAsync();
+        ringtoneSound.unloadAsync();
+      }
+      if (sound) {
+        sound.unloadAsync();
+      }
+    };
+  }, []);
 
   useEffect(() => {
     return () => {
@@ -222,6 +245,7 @@ export default function CallScreen() {
   const startCall = async () => {
     try {
       setIsLoading(true);
+      setCallEnded(false); // Reset call ended state for new call
       const user_id = "68e1891a053b036af73ed31d"; 
       const scenario = selectedScenario.title;
       const response = await fetch(`${BACKEND_URL}/start_call`, {
@@ -254,8 +278,16 @@ export default function CallScreen() {
     }
   };
 
-  const endCall = () => {
+  const endCall = async () => {
+    console.log('Ending call...');
+    
+    // Mark call as ended to prevent ringtone on disconnect
+    setCallEnded(true);
+    
+    // Set connection state (useEffect will handle ringtone cleanup)
     setIsConnected(false);
+    
+    // Navigate to feedback
     router.push("/feedback");
   };
 
@@ -285,7 +317,7 @@ export default function CallScreen() {
     setUserTranscriptHistory(prev => [...prev, data.user_text]);
     setAiTranscriptHistory(prev => [...prev, data.ai_text]);
     
-    console.log(data);
+    // console.log(data);
     var ai_b64 = data.ai_audio_b64;
 
     setIsListening(false);
