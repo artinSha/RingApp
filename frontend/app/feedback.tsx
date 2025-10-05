@@ -162,10 +162,23 @@ export default function ResultsScreen() {
         </View>
 
         {(summary.grammarErrors || []).length > 0 && (
-          <View style={styles.card}>
+          <TouchableOpacity 
+            style={styles.card}
+            activeOpacity={0.8}
+            onPress={() => {
+              router.push({
+                pathname: "/grammar-feedback" as any,
+                params: { 
+                  feedbackData: params.feedbackData,
+                  grammarErrors: JSON.stringify(summary.grammarErrors || [])
+                }
+              });
+            }}
+          >
             <View style={styles.sectionHeader}>
               <Feather name="x-circle" size={20} color="#f87171" />
               <Text style={styles.sectionTitle}>Grammar Feedback</Text>
+              <Feather name="chevron-right" size={20} color="#9ca3af" style={{marginLeft: 'auto'}} />
             </View>
 
             <View style={styles.grammarList}>
@@ -182,7 +195,7 @@ export default function ResultsScreen() {
                 </View>
               ))}
             </View>
-          </View>
+          </TouchableOpacity>
         )}
 
         <View style={styles.actions}>
