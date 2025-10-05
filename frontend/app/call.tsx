@@ -266,6 +266,10 @@ export default function CallScreen() {
       setIsLoading(true);
       setCallEnded(false); // Reset call ended state for new call
       setConversationTurns(0); // Reset turn counter for new call
+      
+      // Reset progress animation for new call
+      progressAnim.setValue(0);
+      
       const user_id = "68e1891a053b036af73ed31d"; 
       const scenario = selectedScenario.title;
       const response = await fetch(`${BACKEND_URL}/start_call`, {
@@ -373,6 +377,13 @@ export default function CallScreen() {
     // Increment conversation turns
     const newTurnCount = conversationTurns + 1;
     setConversationTurns(newTurnCount);
+    
+    // Animate progress bar
+    Animated.timing(progressAnim, {
+      toValue: newTurnCount / maxTurns,
+      duration: 800,
+      useNativeDriver: false,
+    }).start();
     
     // console.log(data);
     var ai_b64 = data.ai_audio_b64;
@@ -524,10 +535,16 @@ export default function CallScreen() {
               <Text style={styles.progressCount}>{conversationTurns}/{maxTurns}</Text>
             </View>
             <View style={styles.progressBarTrack}>
-              <View 
+              <Animated.View 
                 style={[
                   styles.progressBarFill, 
-                  { width: `${(conversationTurns / maxTurns) * 100}%` }
+                  { 
+                    width: progressAnim.interpolate({
+                      inputRange: [0, 1],
+                      outputRange: ['0%', '100%'],
+                      extrapolate: 'clamp',
+                    })
+                  }
                 ]} 
               />
             </View>
