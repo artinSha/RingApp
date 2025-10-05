@@ -1111,14 +1111,14 @@ const styles = StyleSheet.create({
     paddingVertical: 12,
   },
   aiBubble: {
-    backgroundColor: "rgba(51, 65, 85, 0.5)",
-    borderWidth: 1,
-    borderColor: "rgba(71, 85, 105, 0.5)",
-  },
-  userBubble: {
     backgroundColor: "rgba(251, 146, 60, 0.2)",
     borderWidth: 1,
     borderColor: "rgba(251, 146, 60, 0.3)",
+  },
+  userBubble: {
+    backgroundColor: "rgba(51, 65, 85, 0.5)",
+    borderWidth: 1,
+    borderColor: "rgba(71, 85, 105, 0.5)",
   },
   messageText: {
     color: "#e2e8f0",
