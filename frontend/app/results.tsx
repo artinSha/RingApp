@@ -13,7 +13,7 @@ export default function ResultsScreen() {
   const router = useRouter();
 
   return (
-    <ScrollView contentContainerStyle={styles.container}>
+    <ScrollView style={styles.screen} contentContainerStyle={styles.container}>
       <View style={styles.card}>
         <Text style={styles.title}>Latest Results</Text>
         <Text style={styles.subtitle}>
@@ -38,7 +38,7 @@ export default function ResultsScreen() {
 
       <TouchableOpacity
         style={styles.secondaryButton}
-        onPress={() => router.back()}
+        onPress={() => router.push('/')}
       >
         <Feather name="arrow-left" size={18} color="#fb923c" />
         <Text style={styles.secondaryText}>Back to Home</Text>
@@ -48,6 +48,10 @@ export default function ResultsScreen() {
 }
 
 const styles = StyleSheet.create({
+  screen: {
+    flex: 1,
+    backgroundColor: '#111827',
+  },
   container: {
     flexGrow: 1,
     padding: 24,

@@ -23,8 +23,7 @@ const scenarios = [
     title: "🧟 Zombie Apocalypse Survival",
     context: "You're trapped in a mall during a zombie outbreak. You need to communicate with other survivors.",
     aiLines: [
-      "Quick! We need to barricade the doors. Can you help me move this table?",
-      "I hear them getting closer. Do you have any weapons or supplies?",
+       "I hear them getting closer. Do you have any weapons or supplies?",
       "There's an exit through the back. Should we make a run for it now?"
     ]
   },
@@ -273,7 +272,7 @@ export default function CallScreen() {
               <View style={styles.avatarBorder}>
                 <Image
                   source={{
-                    uri: "https://images.unsplash.com/photo-1622169804256-0eb6873ff441?crop=entropy&cs=tinysrgb&fit=max&fm=jpg&ixid=M3w3Nzg4Nzd8MHwxfHNlYXJjaHwxfHxmcmllbmRseSUyMHRlYWNoZXIlMjBwcm9mZXNzaW9uYWwlMjBoZWFkc2hvdHxlbnwxfHx8fDE3NTk1NTI2Mjh8MA&ixlib=rb-4.1.0&q=80&w=1080&utm_source=figma&utm_medium=referral",
+                    uri: 'https://encrypted-tbn0.gstatic.com/images?q=tbn:ANd9GcQk3mDpjoXfNjGy_1uFgbn-9MCCurMXy125Sg&s',
                   }}
                   style={styles.avatarImage}
                 />
@@ -281,7 +280,7 @@ export default function CallScreen() {
             </View>
 
             <View style={styles.avatarDetails}>
-              <Text style={styles.avatarName}>Sarah</Text>
+              <Text style={styles.avatarName}>Lebron</Text>
               <Text style={styles.avatarRole}>AI English Tutor</Text>
               <Text style={styles.avatarTagline}>Ready for an adventure?</Text>
             </View>
@@ -296,7 +295,7 @@ export default function CallScreen() {
             <TouchableOpacity
               activeOpacity={0.7}
               style={[styles.circleButton, styles.declineButton]}
-              onPress={router.back}
+              onPress={() => router.push("/")}
             >
               <Feather name="phone-off" size={32} color="#fca5a5" />
             </TouchableOpacity>
@@ -323,12 +322,12 @@ export default function CallScreen() {
               <View style={styles.avatarInfo}>
                 <Image
                   source={{
-                    uri: "https://images.unsplash.com/photo-1622169804256-0eb6873ff441?crop=entropy&cs=tinysrgb&fit=max&fm=jpg&ixid=M3w3Nzg4Nzd8MHwxfHNlYXJjaHwxfHxmcmllbmRseSUyMHRlYWNoZXIlMjBwcm9mZXNzaW9uYWwlMjBoZWFkc2hvdHxlbnwxfHx8fDE3NTk1NTI2Mjh8MA&ixlib=rb-4.1.0&q=80&w=1080&utm_source=figma&utm_medium=referral",
+                    uri: 'https://encrypted-tbn0.gstatic.com/images?q=tbn:ANd9GcQk3mDpjoXfNjGy_1uFgbn-9MCCurMXy125Sg&s',
                   }}
                   style={styles.smallAvatar}
                 />
                 <View>
-                  <Text style={styles.connectedName}>Sarah</Text>
+                  <Text style={styles.connectedName}>Lebron</Text>
                   <View style={styles.statusRow}>
                     <View style={[styles.statusDot, { backgroundColor: isAiSpeaking ? '#fb923c' : '#10b981' }]} />
                     <Text style={styles.statusText}>
