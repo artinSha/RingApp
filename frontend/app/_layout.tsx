@@ -32,28 +32,9 @@ function useNotificationObserver() {
 
   useEffect(() => {
     if (!isMounted) return;
+    const randomSeconds = 10;
+    sendNoti(randomSeconds);
 
-    let isCancelled = false;
-
-    function scheduleRandomNotification() {
-      // Random delay between 10 and 60 minutes (in seconds)
-      // const minSeconds = 10 * 60;
-      const minSeconds = 10; // For testing purposes, set to 10 seconds
-      // const maxSeconds = 60 * 60;
-      const maxSeconds = 30; // For testing purposes, set to 30 seconds
-      const randomSeconds = Math.floor(Math.random() * (maxSeconds - minSeconds + 1)) + minSeconds;
-      sendNoti(randomSeconds);
-      // Schedule next notification after this one triggers
-      setTimeout(() => {
-        if (!isCancelled) scheduleRandomNotification();
-      }, randomSeconds * 1000);
-    }
-
-    scheduleRandomNotification();
-
-    return () => {
-      isCancelled = true;
-    };
   }, [isMounted]);
 }
 
