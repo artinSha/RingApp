@@ -37,6 +37,8 @@ type HomeScreenProps = {
 
 const TUTOR_IMAGE = require('../assets/images/Oli.png');
 
+const LOGO_IMAGE = require('../assets/images/logo.png');
+
 const HIGHLIGHTS: Highlight[] = [
   {
     icon: 'zap',
@@ -82,9 +84,11 @@ export function HomeScreen({ onStartCall, onMoreInfo, onSchedule }: HomeScreenPr
         </TouchableOpacity>
         
         <View style={styles.logoRow}>
+          {/* 
           <View style={styles.logoBadge}>
-            <Text style={styles.logoText}>SF</Text>
-          </View>
+            <Image source={LOGO_IMAGE} style={styles.logoImage} />
+          </View> 
+          */}
           <Text style={styles.appName}>SpeakFast</Text>
         </View>
         <Text style={styles.tagline}>
@@ -225,9 +229,10 @@ const styles = StyleSheet.create({
     borderColor: 'rgba(75, 85, 99, 0.6)',
   },
   logoRow: {
-    flexDirection: 'row',
+    // flexDirection: 'row',
     alignItems: 'center',
-    gap: 12,
+    justifyContent: 'center',
+    // gap: 12,
   },
   logoBadge: {
     width: 48,
@@ -242,10 +247,17 @@ const styles = StyleSheet.create({
     fontWeight: '700',
     color: '#111827',
   },
+  logoImage: {
+    width: 32,
+    height: 32,
+    borderRadius: 8,
+  },
   appName: {
-    fontSize: 28,
-    fontWeight: '700',
+    fontSize: 32,
+    fontWeight: '800',
     color: '#f9fafb',
+    textAlign: 'center',
+    letterSpacing: -0.5,
   },
   tagline: {
     textAlign: 'center',

@@ -447,21 +447,26 @@ export default function CallScreen() {
     const data = await response.json();
     
     setUserTranscript(data.user_text);
-    setAITranscript(data.ai_text);
     setUserTranscriptHistory(prev => [...prev, data.user_text]);
-    setAiTranscriptHistory(prev => [...prev, data.ai_text]);
     
-    // Increment conversation turns
+    // Increment conversation turns after user speaks
     const newTurnCount = conversationTurns + 1;
     setConversationTurns(newTurnCount);
 
-    // Check if we've reached max turns and auto-end call
+    // Check if we've reached max turns - if so, end call after user's message
     if (newTurnCount >= maxTurns) {
-      console.log(`Reached maximum turns (${maxTurns}), auto-ending call...`);
+      console.log(`Reached maximum turns (${maxTurns}), ending call after user message...`);
+      setIsListening(false);
+      // Small delay to show user's message, then end call
       setTimeout(() => {
         endCall();
-      }, 10); 
+      }, 1500);
+      return; // Don't process AI response
     }
+    
+    // Only get AI response if we haven't reached max turns
+    setAITranscript(data.ai_text);
+    setAiTranscriptHistory(prev => [...prev, data.ai_text]);
       
     // Animate progress bar
     Animated.timing(progressAnim, {
