@@ -1,15 +1,14 @@
+import { Feather } from '@expo/vector-icons';
+import { useRouter } from 'expo-router';
 import React from 'react';
 import {
-  ScrollView,
-  View,
-  Text,
-  StyleSheet,
   Image,
+  ScrollView,
+  StyleSheet,
+  Text,
   TouchableOpacity,
+  View,
 } from 'react-native';
-import { useRouter } from 'expo-router';
-import { Feather } from '@expo/vector-icons';
-import * as Notifications from 'expo-notifications';
 
 type FeatherName = React.ComponentProps<typeof Feather>['name'];
 
@@ -249,6 +248,8 @@ const styles = StyleSheet.create({
   },
   smallBadge: {
     alignSelf: 'flex-start',
+    flexShrink: 1,
+    maxWidth: '50%',
   },
   card: {
     borderRadius: 16,
@@ -275,11 +276,13 @@ const styles = StyleSheet.create({
     flexDirection: 'row',
     alignItems: 'center',
     gap: 8,
+    flexWrap: 'wrap',
   },
   tutorName: {
     fontSize: 18,
     fontWeight: '600',
     color: '#f9fafb',
+    flex: 1,
   },
   tutorSubtitle: {
     fontSize: 14,
