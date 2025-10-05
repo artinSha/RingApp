@@ -1,6 +1,6 @@
 {
   "expo": {
-    "name": "frontend",
+    "name": "SpeakFast",
     "slug": "frontend",
     "owner": "jzh05",
     "version": "1.0.0",
@@ -15,6 +15,7 @@
       "usesAppleSignIn": false
     },
     "android": {
+      "icon": "./assets/images/icon.png",
       "edgeToEdgeEnabled": true,
       "predictiveBackGestureEnabled": false,
       "useNextNotificationsApi": true,

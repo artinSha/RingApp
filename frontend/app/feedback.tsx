@@ -127,7 +127,6 @@ export default function ResultsScreen() {
           </View>
 
           <Text style={styles.scenario}>{summary.scenario}</Text>
-          <Text style={styles.encouragement}>{summary.encouragement}</Text>
         </View>
 
         <TouchableOpacity 
