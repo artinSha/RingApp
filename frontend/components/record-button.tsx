@@ -1,5 +1,6 @@
 import { useState, useEffect } from 'react';
 import { StyleSheet, Button, Alert } from 'react-native';
+const BACKEND_URL = "http://172.16.202.157:5000";
 import {
     useAudioRecorder, 
     AudioModule,
@@ -29,6 +30,35 @@ export default function AudioRecorderButton({ onRecordingComplete }: Props) {
 
 
   };
+  const createUser = async () => {
+  
+  console.log("Creating user...")
+  try {
+    const response = await fetch(`${BACKEND_URL}/create_user`, {
+
+      method: "POST",
+      headers: {
+        "Content-Type": "application/json",
+      },
+      body: JSON.stringify({
+        username: "heman",
+        email: "heman@example.com",
+        dnd_start: "09:00",
+        dnd_end: "17:00",
+        device_token: "optional_device_token_here"
+      }),
+    });
+
+    console.log("Response status:", response.status);
+
+
+    const data = await response.json();
+    console.log("Created user:", data); // { user_id: "..." }
+  } catch (err) {
+    console.error("Error creating user:", err);
+  }
+};
+
 
   useEffect(() => {
     (async () => {
@@ -47,7 +77,8 @@ export default function AudioRecorderButton({ onRecordingComplete }: Props) {
   return (
     <Button
       title={recorderState.isRecording ? "Recording..." : "Tap to Record"}
-      onPress={recorderState.isRecording ? stopRecording : record}
+      onPress={createUser}
+ //     onPress={recorderState.isRecording ? stopRecording : record}
     />
   );
 }

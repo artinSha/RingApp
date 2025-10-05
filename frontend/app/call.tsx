@@ -2,6 +2,7 @@ import { View, Text, Button, StyleSheet, ActivityIndicator } from "react-native"
 import { useRouter } from "expo-router";
 import { useState } from "react";
 import { useAudioPlayer } from 'expo-audio';
+import { Audio } from 'expo-av';
 import AudioRecorderButton from "@/components/record-button";
 
 export default function CallScreen() {
@@ -25,12 +26,12 @@ export default function CallScreen() {
     router.push("/feedback");
   };
 
-  const handleRecordingComplete = async (uri: string) {
+  const handleRecordingComplete = async (uri: string) => {
     // Upload to backend
     const formData = new FormData();
     formData.append('audio', { uri, name: 'recording.m4a', type: 'audio/m4a' } as any);
 
-    const response = await fetch('https://your-backend.com/upload', {
+    const response = await fetch('', {
       method: 'POST',
       body: formData,
       headers: { 'Content-Type': 'multipart/form-data' },
@@ -45,7 +46,7 @@ export default function CallScreen() {
     // Play returned audio
     const { sound } = await Audio.Sound.createAsync({ uri: data.audioUrl }, { shouldPlay: true });
     setSound(sound);
-  });
+  }
 
   return (
     <View style={styles.container}>
