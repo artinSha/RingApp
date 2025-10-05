@@ -1,6 +1,6 @@
 import { useState, useEffect } from 'react';
 import { StyleSheet, Button, Alert } from 'react-native';
-const BACKEND_URL = "http://172.16.202.157:5000";
+const BACKEND_URL = "https://ringapp-backend-production.up.railway.app";
 import {
     useAudioRecorder, 
     AudioModule,

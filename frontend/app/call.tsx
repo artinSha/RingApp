@@ -1,24 +1,30 @@
-import React, { useEffect, useMemo, useRef, useState } from "react";
-import {
-  View,
-  Text,
-  StyleSheet,
-  ActivityIndicator,
-  TouchableOpacity,
-  Image,
-  Animated,
-} from "react-native";
-import { useRouter } from "expo-router";
-import { LinearGradient } from "expo-linear-gradient";
+import AudioRecorderButton from "@/components/record-button";
 import { Feather } from "@expo/vector-icons";
 import { Audio } from "expo-av";
-import AudioRecorderButton from "@/components/record-button";
+
+import { File, cacheDirectory} from 'expo-file-system';
+import { LinearGradient } from "expo-linear-gradient";
+import { useRouter } from "expo-router";
+import React, { useEffect, useMemo, useRef, useState } from "react";
+import {
+  ActivityIndicator,
+  Animated,
+  Image,
+  StyleSheet,
+  Text,
+  TouchableOpacity,
+  View,
+} from "react-native";
+
+const BACKEND_URL = "https://ringapp-backend-production.up.railway.app";
 
 export default function CallScreen() {
   const router = useRouter();
+  const [convID, setConvID] = useState<string | null>(null);
   const [isConnected, setIsConnected] = useState(false);
   const [isLoading, setIsLoading] = useState(false);
-  const [transcript, setTranscript] = useState("");
+  const [user_transcript, setUserTranscript] = useState("");
+  const [ai_transcript, setAITranscript]  = useState("");
   const [sound, setSound] = useState<Audio.Sound | null>(null);
   const pulseAnim = useRef(new Animated.Value(0)).current;
 
@@ -89,9 +95,51 @@ export default function CallScreen() {
     outputRange: [0.35, 0],
   });
 
+  const playBase64Audio = async (base64String: string) => {
+    try {
+      console.log('Starting audio');
+
+      // Create a temporary file in the cache folder
+      const file = new File(cacheDirectory + 'temp_audio.mp3', 'audio/mp3');
+
+      // Write the Base64 content
+      await file.write(base64String, { encoding: 'base64' });
+
+      // Load and play with Expo AV
+      const { sound } = await Audio.Sound.createAsync({ uri: file.uri });
+      await sound.playAsync();
+
+      console.log('Audio playing');
+    } catch (error) {
+      console.error('Error playing audio:', error);
+    }
+  };
+
   const startCall = async () => {
-    setIsLoading(true);
-    // TODO: Call backend POST /start_call here
+    try {
+      setIsLoading(true);
+      const user_id = "68e1891a053b036af73ed31d"; 
+      const scenario = selectedScenario;
+      const response = await fetch(`${BACKEND_URL}/start_call`, {
+        method: "POST", 
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ user_id, scenario})
+      });
+      if (!response.ok) {
+        throw new Error("Failed to start call");
+      }
+
+      const data = await response.json();
+
+      setConvID(data.conversation_id);
+      console.log("Conversation ID:", data.conversation_id);
+
+      setIsConnected(true);
+    } catch (error) {
+      console.error("Error starting call:", error);
+    } finally {
+      setIsLoading(false);
+    }
     setTimeout(() => {
       setIsConnected(true);
       setIsLoading(false);
@@ -104,31 +152,47 @@ export default function CallScreen() {
   };
 
   const handleRecordingComplete = async (uri: string) => {
+    if (!convID) {
+      console.warn("No conversation ID available.")
+      return;
+    }
+
     // Upload to backend
     const formData = new FormData();
+    formData.append("conv_id", convID)
     formData.append('audio', { uri, name: 'recording.m4a', type: 'audio/m4a' } as any);
 
-    // const response = await fetch('', {
-    //   method: 'POST',
-    //   body: formData,
-    //   headers: { 'Content-Type': 'multipart/form-data' },
-    // });
+    const response = await fetch(`${BACKEND_URL}/process_audio`, {
+      method: 'POST',
+      body: formData,
+      headers: { 'Content-Type': 'multipart/form-data' },
+    });
 
-    // const data = await response.json();
-    // // data.audioUrl -> returned m4a
-    // // data.transcript -> text
+    const data = await response.json();
+    // data.audioUrl -> returned m4a
+    // data.transcript -> text
 
-    // setTranscript(data.transcript);
+    setUserTranscript(data.user_text);
+    setAITranscript(data.ai_text);
+    console.log(data);
+    var ai_b64 = data.ai_audio_b64;
+
+    if (!ai_b64) {
+      console.error("AI audio base64 not found in response");
+      return;
+    }
 
     // Play returned audio
     try {
-      const { sound: newSound } = await Audio.Sound.createAsync({ uri });
-      setSound(newSound);
-      await newSound.playAsync();
+      console.log("Playing AI audio...");
+      await playBase64Audio(ai_b64);
+      console.log("AI audio playback finished.");
     } catch (error) {
       console.error('Error playing audio:', error);
     }
-  }
+  };
+
+
 
   return (
     <LinearGradient colors={["#0f172a", "#111827", "#020617"]} style={styles.container}>
@@ -176,7 +240,7 @@ export default function CallScreen() {
             <TouchableOpacity
               activeOpacity={0.7}
               style={[styles.circleButton, styles.declineButton]}
-              onPress={endCall}
+              onPress={router.back}
             >
               <Feather name="phone-off" size={32} color="#fca5a5" />
             </TouchableOpacity>
