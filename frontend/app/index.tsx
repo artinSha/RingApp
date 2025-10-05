@@ -136,7 +136,7 @@ export function HomeScreen({ onStartCall, onMoreInfo }: HomeScreenProps) {
         ))}
       </View>
 
-      {/* <View style={styles.card}>
+      <View style={styles.card}>
         <Text style={styles.sectionTitle}>Recent Scenarios</Text>
         {RECENT_SCENARIOS.map(({ title, score, tone }) => (
           <View key={title} style={styles.scenarioRow}>
@@ -151,9 +151,9 @@ export function HomeScreen({ onStartCall, onMoreInfo }: HomeScreenProps) {
             </View>
           </View>
         ))}
-      </View> */}
+      </View> 
 
-      {/* <View style={styles.card}>
+      <View style={styles.card}>
         <Text style={styles.sectionHint}>Your Progress</Text>
         <View style={styles.statsRow}>
           {STATS.map(({ label, value }) => (
@@ -167,7 +167,7 @@ export function HomeScreen({ onStartCall, onMoreInfo }: HomeScreenProps) {
             <Feather name="menu" size={18} color="#fff" />
             <Text style={styles.ctaText}>More Info</Text>
           </TouchableOpacity>
-      </View> */}
+      </View> 
 
       <View style={styles.warning}>
         <Text style={styles.warningText}>
