@@ -68,38 +68,10 @@ const STATS: Stat[] = [
   { label: 'Avg Score', value: '87%' },
 ];
 
-Notifications.setNotificationHandler({
-  handleNotification: async () => ({
-    shouldPlaySound: true,
-    shouldSetBadge: false,
-    shouldShowBanner: true,
-    shouldShowList: true,
-  }),
-});
 
-async function sendNoti() {
-  Notifications.scheduleNotificationAsync({
-    content: {
-      title: '📱 RING RING !!!',
-      body: "Lebron is Calling!",
-    },
-    trigger: null,
-  });
-}
 
 
 export function HomeScreen({ onStartCall, onMoreInfo }: HomeScreenProps) {
-  React.useEffect(() => {
-    const scheduleRandomCall = () => {
-      const randomDelay = 5; // 15-45 seconds
-      setTimeout(() => {
-        sendNoti();
-        console.log('here');
-      }, randomDelay);
-    };
-
-    scheduleRandomCall();
-  }, []);
   return (
     <ScrollView style={styles.screen} contentContainerStyle={styles.container}>
       <View style={styles.header}>

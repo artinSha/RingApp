@@ -29,6 +29,35 @@ function useNotificationObserver() {
       subscription.remove();
     };
   }, [isMounted]);
+
+  useEffect(() => {
+    if (!isMounted) return;
+    const randomDelay = 30000; // 5 seconds
+    const delayInSeconds = Math.floor(randomDelay / 1000);
+    sendNoti(delayInSeconds);
+  }, [isMounted]);
+}
+
+Notifications.setNotificationHandler({
+  handleNotification: async () => ({
+    shouldPlaySound: true,
+    shouldSetBadge: false,
+    shouldShowBanner: true,
+    shouldShowList: true,
+  }),
+});
+
+async function sendNoti(seconds: number) {
+  Notifications.scheduleNotificationAsync({
+    content: {
+      title: '📱 RING RING !!!',
+      body: "Lebron is Calling!",
+    },
+    trigger: {
+      type: Notifications.SchedulableTriggerInputTypes.TIME_INTERVAL,
+      seconds: seconds
+    },
+  });
 }
 
 export default function Layout() {
