@@ -331,7 +331,7 @@ const styles = StyleSheet.create({
     backgroundColor: "rgba(249,115,22,0.25)",
   },
   avatarUser: {
-    backgroundColor: "rgba(59,130,246,0.2)",
+    backgroundColor: "rgba(55,65,81,0.8)",
   },
   avatarText: {
     fontSize: 12,
@@ -339,18 +339,18 @@ const styles = StyleSheet.create({
     color: "#fb923c",
   },
   avatarTextUser: {
-    color: "#60a5fa",
+    color: "rgba(116, 169, 255, 0.81)",
   },
   aiBubble: {
     flex: 1,
-    backgroundColor: "rgba(55,65,81,0.8)",
+    backgroundColor: "rgba(249,115,22,0.2)",
     borderRadius: 12,
     padding: 12,
   },
   userBubble: {
     flex: 1,
     maxWidth: "80%",
-    backgroundColor: "rgba(249,115,22,0.2)",
+    backgroundColor: "rgba(55,65,81,0.8)",
     borderRadius: 12,
     padding: 12,
   },
