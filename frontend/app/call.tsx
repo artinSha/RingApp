@@ -454,7 +454,7 @@ export default function CallScreen() {
             {messages.length === 0 && isAiSpeaking && (
               <View style={styles.loadingContainer}>
                 <ActivityIndicator size="small" color="#fb923c" />
-                <Text style={styles.loadingChatText}>Sarah is preparing the scenario...</Text>
+                <Text style={styles.loadingChatText}>Lebron is preparing the scenario...</Text>
               </View>
             )}
 
