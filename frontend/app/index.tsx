@@ -94,7 +94,7 @@ export function HomeScreen({ onStartCall, onMoreInfo }: HomeScreenProps) {
           <Image source={{ uri: TUTOR_IMAGE }} style={styles.tutorImage} />
           <View style={styles.tutorCopy}>
             <View style={styles.tutorHeader}>
-              <Text style={styles.tutorName}>Lebron</Text>
+              <Text style={styles.tutorName}>SpeakFast</Text>
               <View style={[styles.badge, styles.smallBadge]}>
                 <Text style={styles.badgeText}>AI Scenario Master</Text>
               </View>
@@ -137,7 +137,7 @@ export function HomeScreen({ onStartCall, onMoreInfo }: HomeScreenProps) {
         ))}
       </View>
 
-      <View style={styles.card}>
+      {/* <View style={styles.card}>
         <Text style={styles.sectionTitle}>Recent Scenarios</Text>
         {RECENT_SCENARIOS.map(({ title, score, tone }) => (
           <View key={title} style={styles.scenarioRow}>
@@ -152,9 +152,9 @@ export function HomeScreen({ onStartCall, onMoreInfo }: HomeScreenProps) {
             </View>
           </View>
         ))}
-      </View>
+      </View> */}
 
-      <View style={styles.card}>
+      {/* <View style={styles.card}>
         <Text style={styles.sectionHint}>Your Progress</Text>
         <View style={styles.statsRow}>
           {STATS.map(({ label, value }) => (
@@ -168,7 +168,7 @@ export function HomeScreen({ onStartCall, onMoreInfo }: HomeScreenProps) {
             <Feather name="menu" size={18} color="#fff" />
             <Text style={styles.ctaText}>More Info</Text>
           </TouchableOpacity>
-      </View>
+      </View> */}
 
       <View style={styles.warning}>
         <Text style={styles.warningText}>

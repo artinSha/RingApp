@@ -309,26 +309,52 @@ export default function CallScreen() {
     setIsEndingCall(true);
     console.log('Ending call...');
     
+    // Always end call locally first to ensure UI responds
+    setCallEnded(true);
+    setIsConnected(false);
+    
     try {
+      // Check if we have a conversation ID
+      if (!convID) {
+        console.warn('No conversation ID available, ending call locally only');
+        // Navigate to home instead of feedback if no convID
+        router.push("/");
+        return;
+      }
+
+      // Create abort controller for timeout handling
+      const controller = new AbortController();
+      const timeoutId = setTimeout(() => controller.abort(), 10000); // 10 second timeout
+      
       // send convID to backend to get feedback data
       const response = await fetch(`${BACKEND_URL}/end_call`, {
         method: "POST",
         headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({ conv_id: convID })
+        body: JSON.stringify({ conv_id: convID }),
+        signal: controller.signal
       });
       
+      clearTimeout(timeoutId);
+      
       if (!response.ok) {
-        console.error("Error ending call:", response.statusText);
-        setIsEndingCall(false);
+        console.error("Backend error ending call:", response.status, response.statusText);
+        // Still end call locally and navigate to home
+        router.push("/");
         return;
       }
 
-      const data = await response.json();
-      // Mark call as ended to prevent ringtone on disconnect
-      setCallEnded(true);
-      
-      // Set connection state (useEffect will handle ringtone cleanup)
-      setIsConnected(false);
+      // Try to parse response
+      let data;
+      try {
+        data = await response.json();
+      } catch (parseError) {
+        console.error("Error parsing end call response:", parseError);
+        // End call locally and navigate to home
+        router.push("/");
+        return;
+      }
+
+      console.log("Call ended successfully, navigating to feedback");
       
       // Navigate to feedback with data
       router.push({
@@ -339,8 +365,19 @@ export default function CallScreen() {
           duration: callDuration.toString()
         }
       });
+      
     } catch (error) {
       console.error("Error ending call:", error);
+      
+      // Check if it's an abort error (timeout)
+      if (error instanceof Error && error.name === 'AbortError') {
+        console.log('End call request timed out');
+      }
+      
+      // Always ensure user can exit the call
+      // Navigate to home as fallback
+      router.push("/");
+    } finally {
       setIsEndingCall(false);
     }
   };
@@ -454,7 +491,7 @@ export default function CallScreen() {
             </View>
 
             <View style={styles.avatarDetails}>
-              <Text style={styles.avatarName}>Lebron</Text>
+              <Text style={styles.avatarName}>SpeakFast</Text>
               <Text style={styles.avatarRole}>AI English Tutor</Text>
               <Text style={styles.avatarTagline}>Ready for an adventure?</Text>
             </View>
@@ -504,7 +541,7 @@ export default function CallScreen() {
                   style={styles.smallAvatar}
                 />
                 <View>
-                  <Text style={styles.connectedName}>Lebron</Text>
+                  <Text style={styles.connectedName}>SpeakFast</Text>
                   <View style={styles.statusRow}>
                     <View style={[styles.statusDot, { backgroundColor: isAiSpeaking ? '#fb923c' : '#10b981' }]} />
                     <Text style={styles.statusText}>
@@ -568,7 +605,7 @@ export default function CallScreen() {
             {messages.length === 0 && isAiSpeaking && (
               <View style={styles.loadingContainer}>
                 <ActivityIndicator size="small" color="#fb923c" />
-                <Text style={styles.loadingChatText}>Lebron is preparing the scenario...</Text>
+                <Text style={styles.loadingChatText}>SpeakFast is preparing the scenario...</Text>
               </View>
             )}
 
