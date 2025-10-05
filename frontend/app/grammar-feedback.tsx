@@ -13,6 +13,8 @@ import {
     View
 } from "react-native";
 
+const BACKEND_URL = "https://ringapp-backend-production.up.railway.app";
+
 interface GrammarError {
   error: string;
   correction: string;
@@ -24,6 +26,8 @@ export default function GrammarFeedbackScreen() {
   const [expandedIndex, setExpandedIndex] = useState<number | null>(null);
   const [practiceMode, setPracticeMode] = useState<number | null>(null);
   const [isRecording, setIsRecording] = useState(false);
+  const [isProcessing, setIsProcessing] = useState(false);
+  const [pronunciationResult, setPronunciationResult] = useState<{correct: boolean, attempts: number} | null>(null);
   const slideAnimations = useRef<Animated.Value[]>([]).current;
   
   // Parse grammar errors from params
@@ -92,24 +96,73 @@ export default function GrammarFeedbackScreen() {
   const startPractice = (index: number) => {
     setPracticeMode(index);
     setIsRecording(false);
+    setPronunciationResult(null);
+    setIsProcessing(false);
   };
 
   const handleRecordingComplete = async (uri: string) => {
-    setIsRecording(false);
-    // Here you could send the audio to a speech recognition service
-    // For now, we'll just show completion feedback
-    console.log('Recording completed:', uri);
+    if (practiceMode === null) return;
     
-    // Simulate processing delay
-    setTimeout(() => {
-      setPracticeMode(null);
-      // You could add feedback about pronunciation accuracy here
-    }, 1000);
+    setIsRecording(false);
+    setIsProcessing(true);
+    
+    try {
+      const correction = grammarErrors[practiceMode]?.correction;
+      if (!correction) {
+        console.error('No correction text available');
+        setIsProcessing(false);
+        return;
+      }
+
+      // Send audio to backend for pronunciation verification
+      const formData = new FormData();
+      formData.append('audio', { uri, name: 'practice.m4a', type: 'audio/m4a' } as any);
+      formData.append('correction_text', correction);
+
+      const response = await fetch(`${BACKEND_URL}/process_practice`, {
+        method: 'POST',
+        body: formData,
+        headers: { 'Content-Type': 'multipart/form-data' },
+      });
+
+      if (!response.ok) {
+        throw new Error(`HTTP error! status: ${response.status}`);
+      }
+
+      const data = await response.json();
+      const isCorrect = data.matched || false; // Expecting a boolean 'matched' field
+      
+      // Update pronunciation result
+      setPronunciationResult(prev => ({
+        correct: isCorrect,
+        attempts: (prev?.attempts || 0) + 1
+      }));
+      
+      // If correct, close practice after showing success for a moment
+      if (isCorrect) {
+        setTimeout(() => {
+          setPracticeMode(null);
+          setPronunciationResult(null);
+        }, 2500);
+      }
+      
+    } catch (error) {
+      console.error('Error processing pronunciation:', error);
+      // Show error feedback
+      setPronunciationResult(prev => ({
+        correct: false,
+        attempts: (prev?.attempts || 0) + 1
+      }));
+    } finally {
+      setIsProcessing(false);
+    }
   };
 
   const closePractice = () => {
     setPracticeMode(null);
     setIsRecording(false);
+    setPronunciationResult(null);
+    setIsProcessing(false);
   };
 
   return (
@@ -256,6 +309,36 @@ export default function GrammarFeedbackScreen() {
                 </Text>
               </View>
 
+              {/* Pronunciation Feedback */}
+              {pronunciationResult && (
+                <View style={[
+                  styles.feedbackContainer,
+                  pronunciationResult.correct ? styles.successFeedback : styles.errorFeedback
+                ]}>
+                  <Feather 
+                    name={pronunciationResult.correct ? "check-circle" : "x-circle"} 
+                    size={24} 
+                    color={pronunciationResult.correct ? "#34d399" : "#f87171"} 
+                  />
+                  <Text style={[
+                    styles.feedbackText,
+                    { color: pronunciationResult.correct ? "#34d399" : "#f87171" }
+                  ]}>
+                    {pronunciationResult.correct 
+                      ? "Perfect! Great pronunciation!" 
+                      : `Not quite right. Try again! (Attempt ${pronunciationResult.attempts})`
+                    }
+                  </Text>
+                </View>
+              )}
+
+              {/* Processing Indicator */}
+              {isProcessing && (
+                <View style={styles.processingContainer}>
+                  <Text style={styles.processingText}>Analyzing your pronunciation...</Text>
+                </View>
+              )}
+
               <View style={styles.recordingControls}>
                 <View style={styles.practiceRecorder}>
                   <AudioRecorderButton 
@@ -263,7 +346,10 @@ export default function GrammarFeedbackScreen() {
                   />
                 </View>
                 <Text style={styles.recordingHint}>
-                  Tap to record your pronunciation
+                  {pronunciationResult?.correct 
+                    ? "Well done! Practice completed." 
+                    : "Tap to record your pronunciation"
+                  }
                 </Text>
               </View>
             </View>
@@ -534,6 +620,40 @@ const styles = StyleSheet.create({
   recordingHint: {
     fontSize: 14,
     color: "#9ca3af",
+    textAlign: "center",
+  },
+  feedbackContainer: {
+    flexDirection: "row",
+    alignItems: "center",
+    gap: 12,
+    padding: 16,
+    borderRadius: 12,
+    marginBottom: 20,
+    borderWidth: 1,
+  },
+  successFeedback: {
+    backgroundColor: "rgba(52,211,153,0.15)",
+    borderColor: "rgba(52,211,153,0.3)",
+  },
+  errorFeedback: {
+    backgroundColor: "rgba(248,113,113,0.15)",
+    borderColor: "rgba(248,113,113,0.3)",
+  },
+  feedbackText: {
+    fontSize: 16,
+    fontWeight: "600",
+    flex: 1,
+    textAlign: "center",
+  },
+  processingContainer: {
+    padding: 16,
+    alignItems: "center",
+    marginBottom: 20,
+  },
+  processingText: {
+    fontSize: 14,
+    color: "#fb923c",
+    fontStyle: "italic",
     textAlign: "center",
   },
 });
