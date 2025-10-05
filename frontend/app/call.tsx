@@ -1,8 +1,7 @@
 import AudioRecorderButton from "@/components/record-button";
 import { Feather } from "@expo/vector-icons";
 import { Audio } from "expo-av";
-
-import { File, cacheDirectory} from 'expo-file-system';
+import { File, Directory } from 'expo-file-system';
 import { LinearGradient } from "expo-linear-gradient";
 import { useRouter } from "expo-router";
 import React, { useEffect, useMemo, useRef, useState } from "react";
@@ -14,9 +13,40 @@ import {
   Text,
   TouchableOpacity,
   View,
+  ScrollView,
 } from "react-native";
 
 const BACKEND_URL = "https://ringapp-backend-production.up.railway.app";
+
+const scenarios = [
+  {
+    title: "🧟 Zombie Apocalypse Survival",
+    context: "You're trapped in a mall during a zombie outbreak. You need to communicate with other survivors.",
+    aiLines: [
+      "Quick! We need to barricade the doors. Can you help me move this table?",
+      "I hear them getting closer. Do you have any weapons or supplies?",
+      "There's an exit through the back. Should we make a run for it now?"
+    ]
+  },
+  {
+    title: "✈️ Airport Check-in Emergency", 
+    context: "Your flight is delayed and you need to rebook. The counter agent is helping you.",
+    aiLines: [
+      "I'm sorry, but your flight has been cancelled due to weather. Let me help you find alternatives.",
+      "We have a flight tomorrow morning at 8 AM, or tonight at 11 PM. Which would you prefer?",
+      "I can offer you a hotel voucher for tonight. Will you need transportation as well?"
+    ]
+  },
+  {
+    title: "🍕 Pizza Order Mix-up",
+    context: "You ordered pizza but got the wrong order. You're calling to resolve the issue.",
+    aiLines: [
+      "Hello, this is Mario's Pizza. How can I help you today?",
+      "Oh no! I'm so sorry about the mix-up. Can you tell me what you ordered originally?",
+      "I'll send the correct pizza right away and you can keep the wrong one. Sound good?"
+    ]
+  }
+];
 
 export default function CallScreen() {
   const router = useRouter();
@@ -24,21 +54,16 @@ export default function CallScreen() {
   const [isConnected, setIsConnected] = useState(false);
   const [isLoading, setIsLoading] = useState(false);
   const [user_transcript, setUserTranscript] = useState("");
-  const [ai_transcript, setAITranscript]  = useState("");
+  const [ai_transcript, setAITranscript] = useState("");
   const [sound, setSound] = useState<Audio.Sound | null>(null);
+  const [callDuration, setCallDuration] = useState(0);
+  const [isAiSpeaking, setIsAiSpeaking] = useState(false);
+  const [userTranscriptHistory, setUserTranscriptHistory] = useState<string[]>([]);
+  const [aiTranscriptHistory, setAiTranscriptHistory] = useState<string[]>([]);
+  const [isListening, setIsListening] = useState(false);
   const pulseAnim = useRef(new Animated.Value(0)).current;
 
   const selectedScenario = useMemo(() => {
-    const scenarios = [
-      "🧟 Zombie Apocalypse Survival",
-      "✈️ Airport Check-in Emergency",
-      "🍕 Pizza Order Mix-up",
-      "🏥 Doctor's Appointment",
-      "🚗 Car Rental Problem",
-      "🏨 Hotel Complaint",
-      "📞 Wrong Number Confusion",
-    ];
-
     return scenarios[Math.floor(Math.random() * scenarios.length)];
   }, []);
 
@@ -73,6 +98,18 @@ export default function CallScreen() {
   }, [isConnected, pulseAnim]);
 
   useEffect(() => {
+    let timer: number;
+    if (isConnected) {
+      timer = setInterval(() => {
+        setCallDuration(prev => prev + 1);
+      }, 1000);
+    }
+    return () => {
+      if (timer) clearInterval(timer);
+    };
+  }, [isConnected]);
+
+  useEffect(() => {
     return () => {
       if (sound) {
         sound.unloadAsync();
@@ -95,20 +132,19 @@ export default function CallScreen() {
     outputRange: [0.35, 0],
   });
 
+  const formatTime = (seconds: number) => {
+    const mins = Math.floor(seconds / 60);
+    const secs = seconds % 60;
+    return `${mins.toString().padStart(2, '0')}:${secs.toString().padStart(2, '0')}`;
+  };
+
   const playBase64Audio = async (base64String: string) => {
     try {
       console.log('Starting audio');
-
-      // Create a temporary file in the cache folder
-      const file = new File(cacheDirectory + 'temp_audio.mp3', 'audio/mp3');
-
-      // Write the Base64 content
+      const file = new File(Directory + 'temp_audio.mp3', 'audio/mp3');
       await file.write(base64String, { encoding: 'base64' });
-
-      // Load and play with Expo AV
       const { sound } = await Audio.Sound.createAsync({ uri: file.uri });
       await sound.playAsync();
-
       console.log('Audio playing');
     } catch (error) {
       console.error('Error playing audio:', error);
@@ -119,7 +155,7 @@ export default function CallScreen() {
     try {
       setIsLoading(true);
       const user_id = "68e1891a053b036af73ed31d"; 
-      const scenario = selectedScenario;
+      const scenario = selectedScenario.title;
       const response = await fetch(`${BACKEND_URL}/start_call`, {
         method: "POST", 
         headers: { "Content-Type": "application/json" },
@@ -130,20 +166,24 @@ export default function CallScreen() {
       }
 
       const data = await response.json();
-
       setConvID(data.conversation_id);
       console.log("Conversation ID:", data.conversation_id);
 
-      setIsConnected(true);
+      setTimeout(() => {
+        setIsConnected(true);
+        setIsLoading(false);
+        // Start with AI speaking
+        setIsAiSpeaking(true);
+        setTimeout(() => {
+          const firstMessage = selectedScenario.aiLines[0];
+          setAiTranscriptHistory([firstMessage]);
+          setIsAiSpeaking(false);
+        }, 2000);
+      }, 1500);
     } catch (error) {
       console.error("Error starting call:", error);
-    } finally {
       setIsLoading(false);
     }
-    setTimeout(() => {
-      setIsConnected(true);
-      setIsLoading(false);
-    }, 1500);
   };
 
   const endCall = () => {
@@ -157,6 +197,8 @@ export default function CallScreen() {
       return;
     }
 
+    setIsListening(true);
+
     // Upload to backend
     const formData = new FormData();
     formData.append("conv_id", convID)
@@ -169,13 +211,16 @@ export default function CallScreen() {
     });
 
     const data = await response.json();
-    // data.audioUrl -> returned m4a
-    // data.transcript -> text
-
+    
     setUserTranscript(data.user_text);
     setAITranscript(data.ai_text);
+    setUserTranscriptHistory(prev => [...prev, data.user_text]);
+    setAiTranscriptHistory(prev => [...prev, data.ai_text]);
+    
     console.log(data);
     var ai_b64 = data.ai_audio_b64;
+
+    setIsListening(false);
 
     if (!ai_b64) {
       console.error("AI audio base64 not found in response");
@@ -185,14 +230,28 @@ export default function CallScreen() {
     // Play returned audio
     try {
       console.log("Playing AI audio...");
+      setIsAiSpeaking(true);
       await playBase64Audio(ai_b64);
+      setIsAiSpeaking(false);
       console.log("AI audio playback finished.");
     } catch (error) {
       console.error('Error playing audio:', error);
+      setIsAiSpeaking(false);
     }
   };
 
-
+  // Create interleaved messages array for chat display
+  const messages: Array<{ text: string; sender: 'ai' | 'user'; timestamp: number }> = [];
+  const maxLength = Math.max(aiTranscriptHistory.length, userTranscriptHistory.length);
+  
+  for (let i = 0; i < maxLength; i++) {
+    if (aiTranscriptHistory[i]) {
+      messages.push({ text: aiTranscriptHistory[i], sender: 'ai', timestamp: i * 2 });
+    }
+    if (userTranscriptHistory[i]) {
+      messages.push({ text: userTranscriptHistory[i], sender: 'user', timestamp: i * 2 + 1 });
+    }
+  }
 
   return (
     <LinearGradient colors={["#0f172a", "#111827", "#020617"]} style={styles.container}>
@@ -202,7 +261,7 @@ export default function CallScreen() {
         <View style={styles.incomingContent}>
           <View style={styles.header}>
             <Text style={styles.headerLabel}>Incoming Practice Call</Text>
-            <Text style={styles.scenarioText}>{selectedScenario}</Text>
+            <Text style={styles.scenarioText}>{selectedScenario.title}</Text>
           </View>
 
           <View style={styles.avatarSection}>
@@ -222,7 +281,7 @@ export default function CallScreen() {
             </View>
 
             <View style={styles.avatarDetails}>
-              <Text style={styles.avatarName}>Lebron</Text>
+              <Text style={styles.avatarName}>Sarah</Text>
               <Text style={styles.avatarRole}>AI English Tutor</Text>
               <Text style={styles.avatarTagline}>Ready for an adventure?</Text>
             </View>
@@ -230,10 +289,7 @@ export default function CallScreen() {
 
           <View style={styles.missionCard}>
             <Text style={styles.missionTitle}>Your Mission</Text>
-            <Text style={styles.missionText}>
-              You'll be dropped into a challenging scenario where you must communicate effectively in English. Are you ready
-              to test your skills?
-            </Text>
+            <Text style={styles.missionText}>{selectedScenario.context}</Text>
           </View>
 
           <View style={styles.actions}>
@@ -261,26 +317,105 @@ export default function CallScreen() {
         </View>
       ) : (
         <View style={styles.connectedContent}>
+          {/* Header */}
           <View style={styles.connectedHeader}>
-            <Text style={styles.connectedTitle}>You’re in a call 🎧</Text>
-            <Text style={styles.connectedTimer}>00:36</Text>
+            <View style={styles.headerRow}>
+              <View style={styles.avatarInfo}>
+                <Image
+                  source={{
+                    uri: "https://images.unsplash.com/photo-1622169804256-0eb6873ff441?crop=entropy&cs=tinysrgb&fit=max&fm=jpg&ixid=M3w3Nzg4Nzd8MHwxfHNlYXJjaHwxfHxmcmllbmRseSUyMHRlYWNoZXIlMjBwcm9mZXNzaW9uYWwlMjBoZWFkc2hvdHxlbnwxfHx8fDE3NTk1NTI2Mjh8MA&ixlib=rb-4.1.0&q=80&w=1080&utm_source=figma&utm_medium=referral",
+                  }}
+                  style={styles.smallAvatar}
+                />
+                <View>
+                  <Text style={styles.connectedName}>Sarah</Text>
+                  <View style={styles.statusRow}>
+                    <View style={[styles.statusDot, { backgroundColor: isAiSpeaking ? '#fb923c' : '#10b981' }]} />
+                    <Text style={styles.statusText}>
+                      {isAiSpeaking ? 'Speaking...' : 'Active'}
+                    </Text>
+                  </View>
+                </View>
+              </View>
+              <View style={styles.callInfo}>
+                <Text style={styles.connectedTimer}>{formatTime(callDuration)}</Text>
+              </View>
+            </View>
           </View>
 
-          <View style={styles.connectedCard}>
-            <Text style={styles.connectedBadge}>AI English Tutor</Text>
-            <Text style={styles.connectedName}>Sarah</Text>
-            <Text style={styles.connectedScenario}>{selectedScenario}</Text>
+          {/* Scenario Info */}
+          <View style={styles.scenarioInfo}>
+            <Text style={styles.scenarioTitle}>{selectedScenario.title}</Text>
+            <Text style={styles.scenarioContext}>{selectedScenario.context}</Text>
           </View>
 
-          <View style={styles.recorderSection}>
+          {/* Chat Messages */}
+          <ScrollView style={styles.chatContainer} showsVerticalScrollIndicator={false}>
+            {messages.length === 0 && isAiSpeaking && (
+              <View style={styles.loadingContainer}>
+                <ActivityIndicator size="small" color="#fb923c" />
+                <Text style={styles.loadingChatText}>Sarah is preparing the scenario...</Text>
+              </View>
+            )}
+
+            {messages.map((message, index) => (
+              <View
+                key={index}
+                style={[
+                  styles.messageContainer,
+                  message.sender === 'user' ? styles.userMessage : styles.aiMessage
+                ]}
+              >
+                {message.sender === 'ai' && (
+                  <View style={styles.aiAvatar}>
+                    <Text style={styles.avatarText}>AI</Text>
+                  </View>
+                )}
+                
+                <View
+                  style={[
+                    styles.messageBubble,
+                    message.sender === 'ai' ? styles.aiBubble : styles.userBubble
+                  ]}
+                >
+                  <Text style={styles.messageText}>{message.text}</Text>
+                </View>
+
+                {message.sender === 'user' && (
+                  <View style={styles.userAvatar}>
+                    <Text style={styles.avatarText}>You</Text>
+                  </View>
+                )}
+              </View>
+            ))}
+
+            {/* Typing Indicator */}
+            {isListening && (
+              <View style={[styles.messageContainer, styles.userMessage]}>
+                <View style={styles.typingBubble}>
+                  <View style={styles.typingDots}>
+                    <View style={[styles.typingDot, { animationDelay: '0ms' }]} />
+                    <View style={[styles.typingDot, { animationDelay: '150ms' }]} />
+                    <View style={[styles.typingDot, { animationDelay: '300ms' }]} />
+                  </View>
+                </View>
+                <View style={styles.userAvatar}>
+                  <Text style={styles.avatarText}>You</Text>
+                </View>
+              </View>
+            )}
+          </ScrollView>
+
+          {/* Voice Controls */}
+          <View style={styles.controlsContainer}>
             <AudioRecorderButton onRecordingComplete={handleRecordingComplete} />
             <Text style={styles.recorderHint}>Tap to send your response</Text>
+            
+            <TouchableOpacity activeOpacity={0.85} style={styles.endCallButton} onPress={endCall}>
+              <Feather name="phone-off" size={20} color="#fff" />
+              <Text style={styles.endCallText}>End Call</Text>
+            </TouchableOpacity>
           </View>
-
-          <TouchableOpacity activeOpacity={0.85} style={styles.endCallButton} onPress={endCall}>
-            <Feather name="phone-off" size={20} color="#fff" />
-            <Text style={styles.endCallText}>End Call</Text>
-          </TouchableOpacity>
         </View>
       )}
 
@@ -294,7 +429,6 @@ export default function CallScreen() {
   );
 }
 
-
 const styles = StyleSheet.create({
   container: {
     flex: 1,
@@ -304,6 +438,7 @@ const styles = StyleSheet.create({
     ...StyleSheet.absoluteFillObject,
     backgroundColor: "rgba(251, 146, 60, 0.04)",
   },
+  // Incoming call styles (preserved)
   incomingContent: {
     flex: 1,
     paddingHorizontal: 24,
@@ -318,24 +453,6 @@ const styles = StyleSheet.create({
     color: "rgba(226, 232, 240, 0.8)",
     fontSize: 14,
     marginBottom: 16,
-  },
-  challengeBadge: {
-    flexDirection: "row",
-    alignItems: "center",
-    gap: 8,
-    backgroundColor: "rgba(251, 146, 60, 0.1)",
-    paddingHorizontal: 20,
-    paddingVertical: 12,
-    borderRadius: 999,
-    borderWidth: 1,
-    borderColor: "rgba(251, 146, 60, 0.25)",
-    marginBottom: 12,
-  },
-  challengeText: {
-    color: "#fb923c",
-    fontSize: 16,
-    fontWeight: "600",
-    marginLeft: 8,
   },
   scenarioText: {
     fontSize: 20,
@@ -466,72 +583,189 @@ const styles = StyleSheet.create({
     fontSize: 13,
     fontWeight: "600",
   },
+  // Connected call styles (new chat interface)
   connectedContent: {
     flex: 1,
-    paddingHorizontal: 24,
-    paddingTop: 80,
-    paddingBottom: 48,
-    justifyContent: "space-between",
+    paddingTop: 60,
   },
   connectedHeader: {
+    paddingHorizontal: 24,
+    paddingBottom: 16,
+    borderBottomWidth: 1,
+    borderBottomColor: "rgba(51, 65, 85, 0.5)",
+  },
+  headerRow: {
+    flexDirection: "row",
+    justifyContent: "space-between",
     alignItems: "center",
   },
-  connectedTitle: {
-    fontSize: 22,
-    fontWeight: "700",
-    color: "#f8fafc",
-    marginBottom: 12,
+  avatarInfo: {
+    flexDirection: "row",
+    alignItems: "center",
+    gap: 12,
   },
-  connectedTimer: {
-    fontSize: 18,
-    fontWeight: "500",
-    color: "rgba(248, 250, 252, 0.75)",
-  },
-  connectedCard: {
-    marginTop: 24,
-    backgroundColor: "rgba(15, 23, 42, 0.75)",
-    borderRadius: 24,
-    padding: 24,
-    borderWidth: 1,
-    borderColor: "rgba(51, 65, 85, 0.6)",
-  },
-  connectedBadge: {
-    alignSelf: "flex-start",
-    fontSize: 12,
-    color: "#fb923c",
-    backgroundColor: "rgba(251, 146, 60, 0.12)",
-    paddingHorizontal: 12,
-    paddingVertical: 6,
-    borderRadius: 12,
-    marginBottom: 16,
+  smallAvatar: {
+    width: 40,
+    height: 40,
+    borderRadius: 20,
+    borderWidth: 2,
+    borderColor: "rgba(251, 146, 60, 0.5)",
   },
   connectedName: {
-    fontSize: 26,
-    fontWeight: "700",
     color: "#f8fafc",
-    marginBottom: 8,
-  },
-  connectedScenario: {
     fontSize: 16,
-    color: "rgba(226, 232, 240, 0.85)",
+    fontWeight: "600",
   },
-  recorderSection: {
+  statusRow: {
+    flexDirection: "row",
     alignItems: "center",
-    marginTop: 32,
+    gap: 6,
+    marginTop: 2,
+  },
+  statusDot: {
+    width: 8,
+    height: 8,
+    borderRadius: 4,
+  },
+  statusText: {
+    color: "rgba(226, 232, 240, 0.7)",
+    fontSize: 12,
+  },
+  callInfo: {
+    alignItems: "flex-end",
+  },
+  connectedTimer: {
+    color: "#e2e8f0",
+    fontSize: 16,
+    fontWeight: "500",
+  },
+  scenarioInfo: {
+    paddingHorizontal: 24,
+    paddingVertical: 12,
+    backgroundColor: "rgba(51, 65, 85, 0.3)",
+    borderBottomWidth: 1,
+    borderBottomColor: "rgba(51, 65, 85, 0.5)",
+  },
+  scenarioTitle: {
+    color: "#fb923c",
+    fontSize: 14,
+    fontWeight: "600",
+    marginBottom: 4,
+  },
+  scenarioContext: {
+    color: "rgba(226, 232, 240, 0.7)",
+    fontSize: 12,
+    lineHeight: 18,
+  },
+  chatContainer: {
+    flex: 1,
+    paddingHorizontal: 16,
+    paddingVertical: 16,
+  },
+  loadingContainer: {
+    flex: 1,
+    justifyContent: "center",
+    alignItems: "center",
+    paddingTop: 100,
+  },
+  loadingChatText: {
+    color: "rgba(226, 232, 240, 0.6)",
+    fontSize: 14,
+    fontStyle: "italic",
+    marginTop: 8,
+  },
+  messageContainer: {
+    flexDirection: "row",
+    gap: 12,
+    marginBottom: 16,
+  },
+  userMessage: {
+    justifyContent: "flex-end",
+  },
+  aiMessage: {
+    justifyContent: "flex-start",
+  },
+  aiAvatar: {
+    width: 32,
+    height: 32,
+    borderRadius: 16,
+    backgroundColor: "rgba(251, 146, 60, 0.2)",
+    justifyContent: "center",
+    alignItems: "center",
+  },
+  userAvatar: {
+    width: 32,
+    height: 32,
+    borderRadius: 16,
+    backgroundColor: "rgba(59, 130, 246, 0.2)",
+    justifyContent: "center",
+    alignItems: "center",
+  },
+  avatarText: {
+    color: "#e2e8f0",
+    fontSize: 10,
+    fontWeight: "600",
+  },
+  messageBubble: {
+    maxWidth: "75%",
+    borderRadius: 16,
+    paddingHorizontal: 16,
+    paddingVertical: 12,
+  },
+  aiBubble: {
+    backgroundColor: "rgba(51, 65, 85, 0.5)",
+    borderWidth: 1,
+    borderColor: "rgba(71, 85, 105, 0.5)",
+  },
+  userBubble: {
+    backgroundColor: "rgba(251, 146, 60, 0.2)",
+    borderWidth: 1,
+    borderColor: "rgba(251, 146, 60, 0.3)",
+  },
+  messageText: {
+    color: "#e2e8f0",
+    fontSize: 14,
+    lineHeight: 20,
+  },
+  typingBubble: {
+    maxWidth: "75%",
+    borderRadius: 16,
+    paddingHorizontal: 16,
+    paddingVertical: 12,
+    backgroundColor: "rgba(251, 146, 60, 0.1)",
+    borderWidth: 1,
+    borderColor: "rgba(251, 146, 60, 0.2)",
+  },
+  typingDots: {
+    flexDirection: "row",
+    gap: 4,
+  },
+  typingDot: {
+    width: 8,
+    height: 8,
+    borderRadius: 4,
+    backgroundColor: "#fb923c",
+  },
+  controlsContainer: {
+    paddingHorizontal: 24,
+    paddingVertical: 24,
+    backgroundColor: "rgba(15, 23, 42, 0.95)",
+    borderTopWidth: 1,
+    borderTopColor: "rgba(51, 65, 85, 0.5)",
+    alignItems: "center",
   },
   recorderHint: {
-    marginTop: 16,
     color: "rgba(226, 232, 240, 0.65)",
     fontSize: 13,
+    marginTop: 12,
+    marginBottom: 16,
   },
   endCallButton: {
-    marginTop: 32,
-    alignSelf: "center",
     flexDirection: "row",
     alignItems: "center",
     justifyContent: "center",
     paddingHorizontal: 32,
-    paddingVertical: 16,
+    paddingVertical: 12,
     backgroundColor: "#f87171",
     borderRadius: 999,
     gap: 8,
@@ -545,7 +779,6 @@ const styles = StyleSheet.create({
     color: "#fff",
     fontSize: 16,
     fontWeight: "600",
-    marginLeft: 8,
   },
   loadingOverlay: {
     ...StyleSheet.absoluteFillObject,
