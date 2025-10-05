@@ -3,7 +3,6 @@ from pymongo import MongoClient
 from datetime import datetime, timezone
 from dotenv import load_dotenv
 import os
-import openai
 from bson.objectid import ObjectId
 from flask_cors import CORS
 import requests
@@ -12,8 +11,6 @@ import base64
 # Load environment variables
 load_dotenv()
 MONGO_URI = os.getenv("MONGO_URI")
-OPENAI_API_KEY = os.getenv("OPENAI_API_KEY")
-openai.api_key = OPENAI_API_KEY
 
 # Flask app
 app = Flask(__name__)
