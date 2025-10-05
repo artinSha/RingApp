@@ -525,16 +525,14 @@ export default function CallScreen() {
               />
               <View style={styles.avatarBorder}>
                 <Image
-                  source={{
-                    uri: 'https://encrypted-tbn0.gstatic.com/images?q=tbn:ANd9GcQk3mDpjoXfNjGy_1uFgbn-9MCCurMXy125Sg&s',
-                  }}
+                  source={require('../assets/images/Oli.png')}
                   style={styles.avatarImage}
                 />
               </View>
             </View>
 
             <View style={styles.avatarDetails}>
-              <Text style={styles.avatarName}>SpeakFast</Text>
+              <Text style={styles.avatarName}>Oli</Text>
               <Text style={styles.avatarRole}>AI English Tutor</Text>
               <Text style={styles.avatarTagline}>Ready for an adventure?</Text>
             </View>
@@ -578,13 +576,11 @@ export default function CallScreen() {
             <View style={styles.headerRow}>
               <View style={styles.avatarInfo}>
                 <Image
-                  source={{
-                    uri: 'https://encrypted-tbn0.gstatic.com/images?q=tbn:ANd9GcQk3mDpjoXfNjGy_1uFgbn-9MCCurMXy125Sg&s',
-                  }}
+                  source={require('../assets/images/Oli.png')}
                   style={styles.smallAvatar}
                 />
                 <View>
-                  <Text style={styles.connectedName}>SpeakFast</Text>
+                  <Text style={styles.connectedName}>Oli</Text>
                   <View style={styles.statusRow}>
                     <View style={[styles.statusDot, { backgroundColor: isAiSpeaking ? '#fb923c' : '#10b981' }]} />
                     <Text style={styles.statusText}>
