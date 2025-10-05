@@ -308,8 +308,15 @@ export default function CallScreen() {
       // Set connection state (useEffect will handle ringtone cleanup)
       setIsConnected(false);
       
-      // Navigate to feedback
-      router.push("/feedback");
+      // Navigate to feedback with data
+      router.push({
+        pathname: "/feedback",
+        params: {
+          feedbackData: JSON.stringify(data),
+          scenario: selectedScenario.title,
+          duration: callDuration.toString()
+        }
+      });
     } catch (error) {
       console.error("Error ending call:", error);
       setIsEndingCall(false);

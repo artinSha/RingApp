@@ -1,5 +1,5 @@
 import { LinearGradient } from "expo-linear-gradient";
-import { useRouter } from "expo-router";
+import { useRouter, useLocalSearchParams } from "expo-router";
 import { Feather } from "@expo/vector-icons";
 import {
   View,
@@ -11,8 +11,23 @@ import {
 
 export default function ResultsScreen() {
   const router = useRouter();
+  const params = useLocalSearchParams();
+  
+  // Parse the feedback data from params
+  let feedbackData = null;
+  try {
+    feedbackData = params.feedbackData ? JSON.parse(params.feedbackData as string) : null;
+    console.log('Received feedback data:', feedbackData);
+  } catch (error) {
+    console.error('Error parsing feedback data:', error);
+  }
 
-  const summary = {
+  // Get additional params
+  const scenario = params.scenario as string || "Practice Scenario";
+  const duration = params.duration as string || "0";
+
+  // Use real data if available, otherwise fallback to default
+  const summary = feedbackData || {
     scenario: "Handling a Delayed Order",
     userTranscript: [
       "I'm so sorry to hear that your order hasn't arrived yet.",
@@ -38,6 +53,11 @@ export default function ResultsScreen() {
     encouragement:
       "Great empathy and resolution skills! Keep refining your verb tenses and you'll reach the next level soon.",
   };
+
+  // Override scenario with the actual one if passed
+  if (scenario && scenario !== "Practice Scenario") {
+    summary.scenario = scenario;
+  }
 
   const getScoreColor = (score: number) => {
     if (score >= 90) return "#34d399";
@@ -72,9 +92,9 @@ export default function ResultsScreen() {
     };
   };
 
-  const badge = getScoreBadge(summary.score);
+  const badge = getScoreBadge(summary.score || 0);
   const participation = Math.round(
-    (summary.userTranscript.length / summary.aiTranscript.length) * 100
+    ((summary.userTranscript?.length || 0) / (summary.aiTranscript?.length || 1)) * 100
   );
 
   return (
@@ -97,8 +117,8 @@ export default function ResultsScreen() {
 
         <View style={styles.card}>
           <View style={styles.scoreBlock}>
-            <Text style={[styles.scoreValue, { color: getScoreColor(summary.score) }]}>
-              {summary.score}%
+            <Text style={[styles.scoreValue, { color: getScoreColor(summary.score || 0) }]}>
+              {summary.score || 0}%
             </Text>
             <View style={[styles.badge, { backgroundColor: badge.backgroundColor, borderColor: badge.borderColor }]}>
               <Text style={[styles.badgeLabel, { color: badge.color }]}>{badge.label}</Text>
@@ -116,7 +136,7 @@ export default function ResultsScreen() {
           </View>
 
           <View style={styles.transcriptList}>
-            {summary.aiTranscript.map((aiMessage, index) => (
+            {(summary.aiTranscript || []).map((aiMessage: string, index: number) => (
               <View key={index} style={styles.transcriptItem}>
                 <View style={styles.messageRow}>
                   <View style={[styles.avatar, styles.avatarAi]}>
@@ -127,10 +147,10 @@ export default function ResultsScreen() {
                   </View>
                 </View>
 
-                {summary.userTranscript[index] ? (
+                {(summary.userTranscript || [])[index] ? (
                   <View style={[styles.messageRow, styles.messageRowUser]}>
                     <View style={styles.userBubble}>
-                      <Text style={styles.messageText}>{summary.userTranscript[index]}</Text>
+                      <Text style={styles.messageText}>{(summary.userTranscript || [])[index]}</Text>
                     </View>
                     <View style={[styles.avatar, styles.avatarUser]}>
                       <Text style={[styles.avatarText, styles.avatarTextUser]}>You</Text>
@@ -142,7 +162,7 @@ export default function ResultsScreen() {
           </View>
         </View>
 
-        {summary.grammarErrors.length > 0 && (
+        {(summary.grammarErrors || []).length > 0 && (
           <View style={styles.card}>
             <View style={styles.sectionHeader}>
               <Feather name="x-circle" size={20} color="#f87171" />
@@ -150,7 +170,7 @@ export default function ResultsScreen() {
             </View>
 
             <View style={styles.grammarList}>
-              {summary.grammarErrors.map((error, index) => (
+              {(summary.grammarErrors || []).map((error: any, index: number) => (
                 <View key={index} style={styles.grammarItem}>
                   <View style={styles.grammarRow}>
                     <Text style={styles.grammarIcon}>❌</Text>
@@ -188,12 +208,16 @@ export default function ResultsScreen() {
 
         <View style={styles.statsGrid}>
           <View style={styles.statsItem}>
-            <Text style={styles.statsValue}>{summary.userTranscript.length}</Text>
+            <Text style={styles.statsValue}>{summary.userTranscript?.length || 0}</Text>
             <Text style={styles.statsLabel}>Your Responses</Text>
           </View>
           <View style={styles.statsItem}>
-            <Text style={styles.statsValue}>{summary.grammarErrors.length}</Text>
+            <Text style={styles.statsValue}>{summary.grammarErrors?.length || 0}</Text>
             <Text style={styles.statsLabel}>Grammar Issues</Text>
+          </View>
+          <View style={styles.statsItem}>
+            <Text style={styles.statsValue}>{Math.floor(parseInt(duration) / 60)}:{(parseInt(duration) % 60).toString().padStart(2, '0')}</Text>
+            <Text style={styles.statsLabel}>Call Duration</Text>
           </View>
         </View>
       </ScrollView>
