@@ -1,6 +1,6 @@
+import * as Notifications from 'expo-notifications';
 import { Stack, router } from "expo-router";
 import { useEffect, useState } from 'react';
-import * as Notifications from 'expo-notifications';
 
 function useNotificationObserver() {
   const [isMounted, setIsMounted] = useState(false);
@@ -68,6 +68,7 @@ export default function Layout() {
       <Stack.Screen name="index" />
       <Stack.Screen name="call" />
       <Stack.Screen name="results" />
+      <Stack.Screen name="schedule" />
     </Stack>
   );
 }

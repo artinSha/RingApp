@@ -32,6 +32,7 @@ type Stat = {
 type HomeScreenProps = {
   onStartCall?: () => void;
   onMoreInfo?: () => void;
+  onSchedule?: () => void;
 };
 
 const TUTOR_IMAGE =
@@ -70,10 +71,17 @@ const STATS: Stat[] = [
 
 
 
-export function HomeScreen({ onStartCall, onMoreInfo }: HomeScreenProps) {
+export function HomeScreen({ onStartCall, onMoreInfo, onSchedule }: HomeScreenProps) {
   return (
     <ScrollView style={styles.screen} contentContainerStyle={styles.container}>
       <View style={styles.header}>
+        <TouchableOpacity 
+          style={styles.settingsButton}
+          onPress={onSchedule}
+        >
+          <Feather name="settings" size={20} color="#9ca3af" />
+        </TouchableOpacity>
+        
         <View style={styles.logoRow}>
           <View style={styles.logoBadge}>
             <Text style={styles.logoText}>SF</Text>
@@ -185,6 +193,7 @@ export default function HomeRoute() {
     <HomeScreen
       onStartCall={() => router.push('/call')}
       onMoreInfo={() => router.push('/results')}
+      onSchedule={() => router.push('/schedule')}
     />
   );
 }
@@ -204,6 +213,17 @@ const styles = StyleSheet.create({
   header: {
     alignItems: 'center',
     gap: 12,
+    position: 'relative',
+  },
+  settingsButton: {
+    position: 'absolute',
+    top: 0,
+    right: 0,
+    padding: 8,
+    borderRadius: 8,
+    backgroundColor: 'rgba(31, 41, 55, 0.6)',
+    borderWidth: 1,
+    borderColor: 'rgba(75, 85, 99, 0.6)',
   },
   logoRow: {
     flexDirection: 'row',
