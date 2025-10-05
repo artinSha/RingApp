@@ -324,9 +324,6 @@ export default function CallScreen() {
       }
 
       const data = await response.json();
-      console.log("Full response data:\n", JSON.stringify(data, null, 2));
-      console.log("Grammar feedback:\n", JSON.stringify(data.grammar_feedback, null, 2));
-
       // Mark call as ended to prevent ringtone on disconnect
       setCallEnded(true);
       

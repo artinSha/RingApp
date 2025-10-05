@@ -207,7 +207,7 @@ export default function ResultsScreen() {
 
         <View style={styles.statsGrid}>
           <View style={styles.statsItem}>
-            <Text style={styles.statsValue}>{summary.userTranscript?.length || 0}</Text>
+            <Text style={styles.statsValue}>{(summary.userTranscript?.length - 1) || 0}</Text>
             <Text style={styles.statsLabel}>Your Responses</Text>
           </View>
           <View style={styles.statsItem}>
