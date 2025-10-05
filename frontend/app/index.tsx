@@ -233,6 +233,8 @@ const styles = StyleSheet.create({
     alignItems: 'center',
     justifyContent: 'center',
     // gap: 12,
+    paddingTop: 16,
+    paddingBottom: 8,
   },
   logoBadge: {
     width: 48,
