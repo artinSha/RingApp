@@ -9,7 +9,7 @@ import {
 } from 'react-native';
 import { useRouter } from 'expo-router';
 import { Feather } from '@expo/vector-icons';
-import { Button } from '@react-navigation/elements';
+import * as Notifications from 'expo-notifications';
 
 type FeatherName = React.ComponentProps<typeof Feather>['name'];
 
@@ -68,9 +68,12 @@ const STATS: Stat[] = [
   { label: 'Avg Score', value: '87%' },
 ];
 
+
+
+
 export function HomeScreen({ onStartCall, onMoreInfo }: HomeScreenProps) {
   return (
-    <ScrollView contentContainerStyle={styles.container}>
+    <ScrollView style={styles.screen} contentContainerStyle={styles.container}>
       <View style={styles.header}>
         <View style={styles.logoRow}>
           <View style={styles.logoBadge}>
@@ -91,7 +94,7 @@ export function HomeScreen({ onStartCall, onMoreInfo }: HomeScreenProps) {
           <Image source={{ uri: TUTOR_IMAGE }} style={styles.tutorImage} />
           <View style={styles.tutorCopy}>
             <View style={styles.tutorHeader}>
-              <Text style={styles.tutorName}>Sarah</Text>
+              <Text style={styles.tutorName}>Lebron</Text>
               <View style={[styles.badge, styles.smallBadge]}>
                 <Text style={styles.badgeText}>AI Scenario Master</Text>
               </View>
@@ -188,6 +191,10 @@ export default function HomeRoute() {
 }
 
 const styles = StyleSheet.create({
+  screen: {
+    flex: 1,
+    backgroundColor: '#111827',
+  },
   container: {
     padding: 24,
     paddingTop: 60,
