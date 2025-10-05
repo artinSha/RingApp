@@ -64,6 +64,7 @@ export default function CallScreen() {
   const [isEndingCall, setIsEndingCall] = useState(false);
   const [conversationTurns, setConversationTurns] = useState(0);
   const [maxTurns] = useState(5);
+  const [isScenarioVisible, setIsScenarioVisible] = useState(true);
   const pulseAnim = useRef(new Animated.Value(0)).current;
   const progressAnim = useRef(new Animated.Value(0)).current;
 
@@ -467,7 +468,7 @@ export default function CallScreen() {
     <LinearGradient colors={["#0f172a", "#111827", "#020617"]} style={styles.container}>
       <View style={styles.backgroundLayer} />
 
-      {!isConnected ? (
+      {!isConnected && !isEndingCall ? (
         <View style={styles.incomingContent}>
           <View style={styles.header}>
             <Text style={styles.headerLabel}>Incoming Practice Call</Text>
@@ -557,10 +558,23 @@ export default function CallScreen() {
           </View>
 
           {/* Scenario Info */}
-          <View style={styles.scenarioInfo}>
-            <Text style={styles.scenarioTitle}>{selectedScenario.title}</Text>
-            <Text style={styles.scenarioContext}>{selectedScenario.context}</Text>
-          </View>
+          {isScenarioVisible && (
+            <View style={styles.scenarioInfo}>
+              <View style={styles.scenarioHeader}>
+                <View style={styles.scenarioTitleContainer}>
+                  <Text style={styles.scenarioTitle}>{selectedScenario.title}</Text>
+                </View>
+                <TouchableOpacity
+                  style={styles.closeScenarioButton}
+                  onPress={() => setIsScenarioVisible(false)}
+                  activeOpacity={0.7}
+                >
+                  <Feather name="x" size={18} color="#9ca3af" />
+                </TouchableOpacity>
+              </View>
+              <Text style={styles.scenarioContext}>{selectedScenario.context}</Text>
+            </View>
+          )}
 
           {/* Progress Bar */}
           <View style={styles.progressContainer}>
@@ -685,6 +699,13 @@ export default function CallScreen() {
         <View style={styles.loadingOverlay}>
           <ActivityIndicator size="large" color="#fb923c" />
           <Text style={styles.loadingText}>Connecting…</Text>
+        </View>
+      )}
+
+      {isEndingCall && (
+        <View style={styles.loadingOverlay}>
+          <ActivityIndicator size="large" color="#fb923c" />
+          <Text style={styles.loadingText}>Ending call…</Text>
         </View>
       )}
     </LinearGradient>
@@ -908,11 +929,29 @@ const styles = StyleSheet.create({
     borderBottomWidth: 1,
     borderBottomColor: "rgba(51, 65, 85, 0.5)",
   },
+  scenarioHeader: {
+    flexDirection: "row",
+    alignItems: "flex-start",
+    justifyContent: "space-between",
+    marginBottom: 4,
+  },
+  scenarioTitleContainer: {
+    flex: 1,
+    marginRight: 8,
+  },
   scenarioTitle: {
     color: "#fb923c",
     fontSize: 14,
     fontWeight: "600",
-    marginBottom: 4,
+  },
+  closeScenarioButton: {
+    width: 24,
+    height: 24,
+    borderRadius: 12,
+    backgroundColor: "rgba(55, 65, 81, 0.6)",
+    alignItems: "center",
+    justifyContent: "center",
+    marginTop: -2,
   },
   scenarioContext: {
     color: "rgba(226, 232, 240, 0.7)",
